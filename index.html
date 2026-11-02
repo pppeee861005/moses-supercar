@@ -293,6 +293,88 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* --- 開頭電影感儀式感動畫 (Cinematic Intro) --- */
+    #intro-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #1b0a2a 0%, #08030e 100%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: opacity 1.2s ease, transform 1.2s ease;
+    }
+    #intro-screen.fade-out {
+      opacity: 0;
+      transform: scale(1.15);
+      pointer-events: none;
+    }
+    .intro-cross {
+      font-size: 64px;
+      color: #ffd700;
+      text-shadow: 0 0 35px #ffaa00, 0 0 70px #ff6600;
+      animation: floatCross 3s ease-in-out infinite alternate;
+      margin-bottom: 20px;
+    }
+    @keyframes floatCross {
+      from { transform: translateY(0px) scale(0.95); filter: drop-shadow(0 0 20px #ffbb00); }
+      to { transform: translateY(-12px) scale(1.05); filter: drop-shadow(0 0 45px #ffea00); }
+    }
+    .intro-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      background: linear-gradient(180deg, #ffffff 0%, #ffd700 60%, #ff8800 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 25px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+    }
+    .intro-story-box {
+      max-width: 680px;
+      font-size: 20px;
+      line-height: 2.1;
+      color: #e2d9f3;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+    }
+    .intro-story-line {
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .intro-story-line.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .intro-hint {
+      margin-top: 40px;
+      font-size: 15px;
+      color: #a894c7;
+      letter-spacing: 3px;
+      animation: blinkText 1.5s infinite;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      padding: 8px 24px;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    @keyframes blinkText {
+      0%, 100% { opacity: 0.4; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+
     /* Floating View Switcher */
     #view-btn {
       position: absolute;
@@ -319,6 +401,18 @@
   <script src="./car_model_data.js"></script>
 </head>
 <body>
+
+  <!-- 開頭儀式感動畫畫面 (V1.01 史詩正邪大戰序幕) -->
+  <div id="intro-screen">
+    <div class="intro-cross">✝</div>
+    <h1 class="intro-title">紹元超跑 ‧ 聖光啟示錄</h1>
+    <div class="intro-story-box">
+      <div class="intro-story-line show" id="story-text">
+        黑暗籠罩了大地，撒旦幼兒園釋放了地獄惡念...
+      </div>
+    </div>
+    <div class="intro-hint" id="intro-skip-hint">點擊任意處 ‧ 聆聽福音出征 (可跳過)</div>
+  </div>
 
   <div id="game-container"></div>
 
@@ -528,6 +622,26 @@
         gain.connect(this.ctx.destination);
         osc.start(now);
         osc.stop(now + 0.2);
+      }
+      // 開場序幕神聖大鐘聲 (Cathedral Bell / 莊嚴儀式感)
+      playCathedralBell() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // 基頻與多重鐘鳴泛音
+        const harmonics = [220, 442, 665, 890, 1340];
+        harmonics.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          const initialVol = 0.25 / (idx + 1);
+          gain.gain.setValueAtTime(initialVol, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 2.8);
+        });
       }
     }
 
@@ -1384,6 +1498,66 @@
       gameState.running = true;
     }
 
+    /* --- 開頭儀式感動畫劇本邏輯 (Epic Cinematic Intro) --- */
+    const introLines = [
+      "⚔️ 這是一場亙古未有的正邪大戰...",
+      "👿 撒旦幼兒園釋放地獄惡童，企圖用混亂污染純潔的人間。",
+      "✨ 耶穌的聖靈降臨於此，賦予了【紹元超跑】神聖之光！",
+      "💩 裝備神聖生化之泉，以聖潔糞水滌淨一切罪惡！",
+      "✝️ 讓我們疾馳出征，傳達福音，擊潰最終的撒旦大魔王！"
+    ];
+
+    let currentLineIdx = 0;
+    let introTimer = null;
+    let introFinished = false;
+
+    function startIntroCinematic() {
+      const screen = document.getElementById('intro-screen');
+      const textEl = document.getElementById('story-text');
+
+      function nextLine() {
+        if (introFinished) return;
+        currentLineIdx++;
+        if (currentLineIdx < introLines.length) {
+          textEl.classList.remove('show');
+          setTimeout(() => {
+            textEl.innerHTML = introLines[currentLineIdx];
+            textEl.classList.add('show');
+            sound.playCathedralBell();
+          }, 400);
+          introTimer = setTimeout(nextLine, 3200);
+        } else {
+          finishIntro();
+        }
+      }
+
+      function finishIntro() {
+        if (introFinished) return;
+        introFinished = true;
+        clearTimeout(introTimer);
+        screen.classList.add('fade-out');
+        sound.playHolyHymn();
+        setTimeout(() => {
+          screen.style.display = 'none';
+        }, 1200);
+      }
+
+      // 點擊任意處立即推進或跳過動畫
+      screen.addEventListener('click', () => {
+        sound.init();
+        if (currentLineIdx < introLines.length - 1) {
+          clearTimeout(introTimer);
+          nextLine();
+        } else {
+          finishIntro();
+        }
+      });
+
+      // 自動依序播放
+      introTimer = setTimeout(nextLine, 3000);
+      sound.playCathedralBell();
+    }
+
     function setupControls() {
       window.addEventListener('keydown', (e) => {
         sound.init();
@@ -1435,6 +1609,7 @@
     window.onload = () => {
       initThree();
       animate();
+      startIntroCinematic();
     };
   </script>
 </body>
