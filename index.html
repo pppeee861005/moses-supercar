@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>紹元超跑：正邪大戰 - 聖水制裁撒旦幼兒園</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0d0614;
+      font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+      color: #fff;
+    }
+    #game-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    /* HUD Overlays */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .panel {
+      background: rgba(18, 10, 32, 0.75);
+      border: 2px solid #ffcc00;
+      box-shadow: 0 0 15px rgba(255, 204, 0, 0.4), inset 0 0 10px rgba(255, 204, 0, 0.2);
+      border-radius: 12px;
+      padding: 12px 20px;
+      backdrop-filter: blur(8px);
+    }
+    .hud-title {
+      font-size: 14px;
+      color: #ffd700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .hud-val {
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 8px #ff9900;
+    }
+
+    /* Boss Bar */
+    #boss-container {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 480px;
+      max-width: 90%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .boss-name {
+      color: #ff3333;
+      font-size: 18px;
+      font-weight: bold;
+      text-shadow: 0 0 10px #ff0000;
+      letter-spacing: 2px;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      from { opacity: 0.8; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+    .boss-bar-bg {
+      width: 100%;
+      height: 22px;
+      background: #330000;
+      border: 2px solid #ff4444;
+      border-radius: 11px;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+    }
+    #boss-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff9900, #ff0033);
+      transition: width 0.1s linear;
+    }
+
+    /* Bars */
+    .bar-wrap {
+      width: 220px;
+      height: 16px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    #hp-bar {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88, #33cc33);
+      transition: width 0.2s ease;
+    }
+    #faith-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ffcc00, #ffdd55);
+      box-shadow: 0 0 10px #ffcc00;
+      transition: width 0.2s ease;
+    }
+
+    /* Bottom Info & Skill */
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-card {
+      background: rgba(20, 10, 35, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
+    }
+    .skill-key {
+      background: #ffcc00;
+      color: #111;
+      font-weight: 900;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .skill-text {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* Floating Dialog/Messages */
+    #event-toast {
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 30px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 20px #ff6600, 0 0 40px #ff0000;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      text-align: center;
+      z-index: 100;
+      max-width: 80%;
+    }
+
+    /* Start / Showcase Overlay */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      background: rgba(10, 5, 20, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: linear-gradient(145deg, #1f1133, #0f071a);
+      border: 3px solid #ffcc00;
+      box-shadow: 0 0 40px rgba(255, 170, 0, 0.6);
+      border-radius: 20px;
+      padding: 35px 45px;
+      max-width: 650px;
+      width: 90%;
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 15px #ffaa00;
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+    }
+    .modal-desc {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #ddd;
+      margin-bottom: 20px;
+    }
+
+    /* Color switch buttons */
+    .paint-selector {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 25px;
+      align-items: center;
+    }
+    .paint-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .paint-btn:hover, .paint-btn.active {
+      transform: scale(1.25);
+      box-shadow: 0 0 12px #ffcc00;
+    }
+
+    .btn-start {
+      background: linear-gradient(90deg, #ff9900, #ffcc00);
+      border: none;
+      padding: 16px 45px;
+      font-size: 22px;
+      font-weight: 900;
+      color: #1a052e;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 204, 0, 0.8);
+      transition: all 0.2s;
+    }
+    .btn-start:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 35px rgba(255, 204, 0, 1);
+    }
+
+    /* Model Status Bar */
+    #model-loading-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #ffea70;
+      border: 1px solid #ffd700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+    }
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffea70;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Floating View Switcher */
+    #view-btn {
+      position: absolute;
+      bottom: 90px;
+      right: 25px;
+      background: rgba(20, 10, 35, 0.85);
+      border: 2px solid #ffd700;
+      color: #ffd700;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 20;
+      pointer-events: auto;
+    }
+  </style>
+
+  <!-- 本地免連網 Three.js 核心庫與控制套件 -->
+  <script src="./three.min.js"></script>
+  <script src="./STLLoader.js"></script>
+  <script src="./GLTFLoader.js"></script>
+  <script src="./OrbitControls.js"></script>
+  <!-- 內嵌超跑 3D 數據 (零 CORS、零網路依賴、保證秒開) -->
+  <script src="./car_model_data.js"></script>
+</head>
+<body>
+
+  <div id="game-container"></div>
+
+  <div id="model-loading-badge">
+    <div class="spinner" id="model-spinner"></div>
+    <span id="model-status">載入 3D 手工超跑中...</span>
+  </div>
+
+  <button id="view-btn">📷 切換視角 (C 鍵)</button>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-top">
+      <div class="panel">
+        <div class="hud-title">聖光生命 (HP)</div>
+        <div class="bar-wrap">
+          <div id="hp-bar"></div>
+        </div>
+        <div class="hud-title" style="margin-top: 8px;">耶穌聖靈充能 (滿能按 E)</div>
+        <div class="bar-wrap">
+          <div id="faith-bar"></div>
+        </div>
+      </div>
+
+      <!-- Boss HP Bar -->
+      <div id="boss-container">
+        <div class="boss-name" id="boss-title">👿 撒旦園長 - 地獄魔嬰降臨 👿</div>
+        <div class="boss-bar-bg">
+          <div id="boss-bar-fill"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="text-align: right;">
+        <div class="hud-title">擊破幼兒園惡魔</div>
+        <div class="hud-val" id="score-val">0</div>
+        <div class="hud-title" style="margin-top: 6px;">神聖時速</div>
+        <div class="hud-val" id="speed-val" style="color: #00ffea; font-size: 22px;">320 KM/H</div>
+      </div>
+    </div>
+
+    <div id="event-toast"></div>
+
+    <div class="hud-bottom">
+      <div class="skill-card">
+        <div class="skill-key">A / D 或 ◀ ▶</div>
+        <div class="skill-text">超跑漂移變道</div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-key">SPACE 空白鍵</div>
+        <div class="skill-text">發射 💩 糞水飛彈 (1秒1發點射)</div>
+      </div>
+      <div class="skill-card" style="border-color: #ffd700;">
+        <div class="skill-key" style="background:#ff0055; color:#fff;">E 鍵</div>
+        <div class="skill-text">耶穌基督聖光滌淨 (大招)</div>
+      </div>
+      <div class="skill-card" style="border-color: #00ffcc;">
+        <div class="skill-key" style="background:#00bbbb; color:#fff;">C 鍵</div>
+        <div class="skill-text">切換超跑近景視角</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start / Showroom Dialog -->
+  <div class="modal-overlay" id="start-modal">
+    <div class="modal-content">
+      <h1 class="modal-title">✨ 紹元超跑：手工匠心 × 聖光征途 ✨</h1>
+      <p class="modal-desc">
+        您親手打造的 <b>90 萬面高精超跑</b> 已就位！<br>
+        開場展示台支援 <b>滑鼠左鍵拖曳 360 度旋轉賞車</b>、滾輪拉近拉遠！<br>
+        請挑選您喜愛的神聖車漆外觀：
+      </p>
+
+      <!-- 車漆選擇 -->
+      <div class="paint-selector">
+        <span style="font-size:14px; color:#ffd700; font-weight:bold;">客製車漆：</span>
+        <div class="paint-btn active" style="background: #ffd700;" data-color="0xd4af37" title="聖光曜金"></div>
+        <div class="paint-btn" style="background: #e62020;" data-color="0xcc1111" title="烈焰魔紅"></div>
+        <div class="paint-btn" style="background: #111111;" data-color="0x151515" title="黑曜暗影"></div>
+        <div class="paint-btn" style="background: #00d4ff;" data-color="0x00a8e8" title="聖泉青瓷"></div>
+        <div class="paint-btn" style="background: #e0e0e0;" data-color="0xdcdcdc" title="手工雕刻原色白模"></div>
+      </div>
+
+      <button class="btn-start" id="start-btn">發動引擎 ‧ 出征淨化撒旦幼兒園！</button>
+    </div>
+  </div>
+
+  <!-- Game Over / Victory Modal -->
+  <div class="modal-overlay" id="end-modal" style="display:none;">
+    <div class="modal-content">
+      <h1 class="modal-title" id="end-title">聖光普照 ‧ 大獲全勝！</h1>
+      <p class="modal-desc" id="end-desc">撒旦幼兒園被神聖糞水徹底洗滌，惡魔幼兒已乖乖回到搖籃睡覺！</p>
+      <div style="font-size: 24px; font-weight: bold; margin-bottom: 25px; color:#ffd700;">
+        最終擊殺數: <span id="final-score">0</span>
+      </div>
+      <button class="btn-start" id="restart-btn">再次聖光洗禮</button>
+    </div>
+  </div>
+
+  <script>
+    /* --- 音效合成器 (Web Audio API) --- */
+    class SoundFX {
+      constructor() { this.ctx = null; }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      playPoopShot() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(460, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.18);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+      playSplash() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.15;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.linearRampToValueAtTime(200, now + 0.15);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+      playHolyHymn() {
+        if (!this.ctx) return;
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.04);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + idx * 0.04);
+          osc.stop(this.ctx.currentTime + 1.2);
+        });
+      }
+      playHurt() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+      playDevilCry() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.linearRampToValueAtTime(250, now + 0.15);
+        osc.frequency.linearRampToValueAtTime(450, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+      // 飛刀破空呼嘯聲 (咻咻破空音)
+      playBladeWhoosh() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.2);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+    }
+
+    const sound = new SoundFX();
+
+    /* --- GAME ENGINE & THREE.JS LOGIC --- */
+    const ROAD_WIDTH = 26;
+    const ROAD_LANES = [-8.5, -4.25, 0, 4.25, 8.5];
+    const TRACK_LENGTH = 300;
+
+    let scene, camera, renderer, orbitControls;
+    let playerCarGroup;
+    let stlLoaded = false;
+    let stlCarMesh = null;
+    let currentPaintColor = 0xd4af37;
+    let cameraMode = 0;
+
+    let gameState = {
+      running: false,
+      hp: 100,
+      faith: 0,
+      score: 0,
+      speed: 2.2,
+      playerX: 0,
+      targetX: 0,
+      bossActive: false,
+      bossHp: 100,
+      bossMaxHp: 100,
+      bossObj: null,
+      keys: { left: false, right: false, shoot: false, ult: false },
+      lastShootTime: 0,
+      shootCooldown: 1000, // 嚴格限制一秒只能發射一發 (1000ms 冷卻)
+      // Boss 飛刀相關
+      lastBossShootTime: 0,
+      bossShootInterval: 1.8,
+      bossShootCount: 0,
+    };
+
+    let bullets = [];
+    let enemies = [];
+    let bossBlades = []; // 撒旦園長飛刀陣列
+    let particles = [];
+    let roadSegments = [];
+    let decorations = [];
+
+    function initThree() {
+      const container = document.getElementById('game-container');
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x130626, 0.007);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 5, 14);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // OrbitControls
+      orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+      orbitControls.enableDamping = true;
+      orbitControls.dampingFactor = 0.05;
+      orbitControls.maxDistance = 25;
+      orbitControls.minDistance = 4;
+      orbitControls.target.set(0, 1.2, 8);
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xfff5e6, 0.85);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffea88, 1.5);
+      dirLight.position.set(20, 35, 25);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      const fillLight = new THREE.DirectionalLight(0x88ccff, 0.7);
+      fillLight.position.set(-20, 20, -20);
+      scene.add(fillLight);
+
+      const carSpotLight = new THREE.PointLight(0xffd700, 2.5, 30);
+      carSpotLight.position.set(0, 6, 8);
+      scene.add(carSpotLight);
+
+      createRoad();
+      createPlayerCar();
+      loadCarModelDirect();
+
+      window.addEventListener('resize', onWindowResize);
+      setupControls();
+    }
+
+    function createRoad() {
+      const roadGeo = new THREE.PlaneGeometry(ROAD_WIDTH, TRACK_LENGTH, 10, 50);
+      const roadMat = new THREE.MeshStandardMaterial({
+        color: 0x241738,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+
+      for (let i = 0; i < 2; i++) {
+        const seg = new THREE.Mesh(roadGeo, roadMat);
+        seg.rotation.x = -Math.PI / 2;
+        seg.position.z = -i * TRACK_LENGTH;
+        seg.receiveShadow = true;
+        scene.add(seg);
+        roadSegments.push(seg);
+
+        const railGeo = new THREE.BoxGeometry(0.8, 1.2, TRACK_LENGTH);
+        const railMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0x553300, roughness: 0.3 });
+        const leftRail = new THREE.Mesh(railGeo, railMat);
+        leftRail.position.set(-ROAD_WIDTH / 2, 0.6, -i * TRACK_LENGTH);
+        scene.add(leftRail);
+
+        const rightRail = new THREE.Mesh(railGeo, railMat);
+        rightRail.position.set(ROAD_WIDTH / 2, 0.6, -i * TRACK_LENGTH);
+        scene.add(rightRail);
+
+        for (let z = -TRACK_LENGTH / 2; z < TRACK_LENGTH / 2; z += 30) {
+          const p1 = createTrackTotem();
+          p1.position.set(-ROAD_WIDTH / 2 - 3.5, 0, -i * TRACK_LENGTH + z);
+          scene.add(p1);
+          decorations.push(p1);
+
+          const p2 = createTrackTotem();
+          p2.position.set(ROAD_WIDTH / 2 + 3.5, 0, -i * TRACK_LENGTH + z);
+          scene.add(p2);
+          decorations.push(p2);
+        }
+      }
+
+      const starGeo = new THREE.BufferGeometry();
+      const starPos = [];
+      for (let i = 0; i < 700; i++) {
+        starPos.push((Math.random() - 0.5) * 600);
+        starPos.push(Math.random() * 160 + 20);
+        starPos.push((Math.random() - 0.5) * 600);
+      }
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+      scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffe082, size: 1.5, transparent: true, opacity: 0.8 })));
+    }
+
+    function createTrackTotem() {
+      const g = new THREE.Group();
+      const baseGeo = new THREE.CylinderGeometry(0.8, 1.2, 5, 8);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x4a148c });
+      const base = new THREE.Mesh(baseGeo, baseMat);
+      base.position.y = 2.5;
+      g.add(base);
+
+      const crossG = new THREE.Group();
+      const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.8, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
+      const c2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
+      c2.position.y = 0.3;
+      crossG.add(c1, c2);
+      crossG.position.y = 6.2;
+      g.add(crossG);
+
+      return g;
+    }
+
+    function createPlayerCar() {
+      playerCarGroup = new THREE.Group();
+      playerCarGroup.position.set(0, 0, 8);
+      scene.add(playerCarGroup);
+    }
+
+    function attachModelToPlayer(carMesh) {
+      const stlCarContainer = new THREE.Group();
+      stlCarContainer.add(carMesh);
+
+      const turretGroup = new THREE.Group();
+      turretGroup.position.set(0, 1.4, 0.2);
+
+      const vCross = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.4, 0.25), new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0x664400 }));
+      const hCross = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 0.25), new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0x664400 }));
+      hCross.position.y = 0.25;
+      turretGroup.add(vCross, hCross);
+
+      const cannonGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.8, 12);
+      const cannonMat = new THREE.MeshStandardMaterial({ color: 0x4a2a12, metalness: 0.8, roughness: 0.3 });
+      const cL = new THREE.Mesh(cannonGeo, cannonMat);
+      cL.rotation.x = Math.PI / 2;
+      cL.position.set(-0.75, -0.1, -0.5);
+      const cR = new THREE.Mesh(cannonGeo, cannonMat);
+      cR.rotation.x = Math.PI / 2;
+      cR.position.set(0.75, -0.1, -0.5);
+      turretGroup.add(cL, cR);
+      stlCarContainer.add(turretGroup);
+
+      const haloGeo = new THREE.TorusGeometry(1.6, 0.08, 8, 32);
+      const haloMat = new THREE.MeshBasicMaterial({ color: 0xfff077 });
+      const halo = new THREE.Mesh(haloGeo, haloMat);
+      halo.rotation.x = Math.PI / 2;
+      halo.position.set(0, 2.5, 0);
+      stlCarContainer.add(halo);
+
+      const underglow = new THREE.PointLight(0xffea00, 3, 5);
+      underglow.position.set(0, 0.2, 0);
+      stlCarContainer.add(underglow);
+
+      playerCarGroup.add(stlCarContainer);
+      stlLoaded = true;
+
+      const badge = document.getElementById('model-loading-badge');
+      badge.innerHTML = '✨ 紹元手工超跑渲染就緒！(高精90萬面)';
+      badge.style.color = '#00ff88';
+      badge.style.borderColor = '#00ff88';
+      showToast('🌟 手工超跑已成功上線！支援 360° 賞車與車漆自訂');
+    }
+
+    // ★★★ 核心：直接從內嵌二進位數據加載（零跨域限制、保證 100% 成功） ★★★
+    function loadCarModelDirect() {
+      const statusEl = document.getElementById('model-status');
+      statusEl.innerText = '正在加載手工超跑 (高精 90 萬面)...';
+
+      const gltfLoader = new THREE.GLTFLoader();
+
+      // 將 base64 轉為 ArrayBuffer 直接解析
+      if (window.CAR_GLB_DATA) {
+        const base64Str = window.CAR_GLB_DATA.split(',')[1];
+        const binaryStr = window.atob(base64Str);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+
+        gltfLoader.parse(
+          bytes.buffer,
+          '',
+          (gltf) => {
+            let meshObj = null;
+            gltf.scene.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                child.geometry.computeVertexNormals();
+                meshObj = child;
+              }
+            });
+
+            const carMat = new THREE.MeshPhysicalMaterial({
+              color: currentPaintColor,
+              metalness: 0.88,
+              roughness: 0.16,
+              clearcoat: 1.0,
+              clearcoatRoughness: 0.08,
+              reflectivity: 0.95
+            });
+
+            if (meshObj) {
+              meshObj.material = carMat;
+              meshObj.geometry.center();
+              const scale = 5.6 / 262.3;
+              meshObj.scale.set(scale, scale, scale);
+              meshObj.rotation.x = -Math.PI / 2;
+              meshObj.rotation.z = Math.PI;
+              meshObj.position.y = 0.55;
+              stlCarMesh = meshObj;
+              attachModelToPlayer(meshObj);
+            }
+          },
+          (err) => {
+            console.error('GLTF Parse Error:', err);
+            statusEl.innerText = '模型解析失敗';
+          }
+        );
+      } else {
+        statusEl.innerText = '未找到內嵌模型數據';
+      }
+    }
+
+    function changeCarPaint(colorHex) {
+      currentPaintColor = colorHex;
+      if (stlCarMesh && stlCarMesh.material) {
+        stlCarMesh.material.color.setHex(colorHex);
+      }
+    }
+
+    function shootPooMissile() {
+      const now = performance.now();
+      if (now - gameState.lastShootTime < gameState.shootCooldown) return;
+      gameState.lastShootTime = now;
+
+      sound.playPoopShot();
+
+      [-0.75, 0.75].forEach(offset => {
+        const bulletGroup = new THREE.Group();
+        bulletGroup.position.set(playerCarGroup.position.x + offset, 1.4, playerCarGroup.position.z - 2.5);
+
+        const basePoo = new THREE.Mesh(
+          new THREE.ConeGeometry(0.35, 0.9, 8),
+          new THREE.MeshStandardMaterial({ color: 0x5a2d0c, roughness: 0.3, metalness: 0.2 })
+        );
+        basePoo.rotation.x = -Math.PI / 2;
+        bulletGroup.add(basePoo);
+
+        const halo = new THREE.Mesh(
+          new THREE.RingGeometry(0.25, 0.38, 12),
+          new THREE.MeshBasicMaterial({ color: 0xffea00, side: THREE.DoubleSide })
+        );
+        halo.position.z = 0.2;
+        bulletGroup.add(halo);
+
+        scene.add(bulletGroup);
+        bullets.push({ obj: bulletGroup, speed: 3.2, life: 90 });
+      });
+    }
+
+    function triggerHolyUltimate() {
+      if (gameState.faith < 100) {
+        showToast('聖靈充能尚未圓滿！多擊中惡魔！');
+        return;
+      }
+      gameState.faith = 0;
+      updateUI();
+      sound.playHolyHymn();
+
+      showToast('✝ 耶穌基督聖光滌淨！天降聖泉滔天巨浪！ ✝');
+
+      for (let i = 0; i < 40; i++) {
+        spawnSplashParticles(
+          (Math.random() - 0.5) * ROAD_WIDTH,
+          1 + Math.random() * 3,
+          playerCarGroup.position.z - Math.random() * 80,
+          0xffea00,
+          true
+        );
+      }
+
+      enemies.forEach(enemy => {
+        createExplosion(enemy.obj.position.x, enemy.obj.position.y, enemy.obj.position.z);
+        scene.remove(enemy.obj);
+        gameState.score += 2;
+      });
+      enemies = [];
+
+      if (gameState.bossActive && gameState.bossObj) {
+        gameState.bossHp -= 35;
+        sound.playDevilCry();
+        if (gameState.bossHp <= 0) defeatBoss();
+      }
+      updateUI();
+    }
+
+    function spawnEnemy() {
+      if (!gameState.running || gameState.bossActive) return;
+
+      const type = Math.floor(Math.random() * 3);
+      const enemyGroup = new THREE.Group();
+      const lane = ROAD_LANES[Math.floor(Math.random() * ROAD_LANES.length)];
+      enemyGroup.position.set(lane, 0, -180);
+
+      if (type === 0) {
+        const trike = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 2.2), new THREE.MeshStandardMaterial({ color: 0x990000 }));
+        trike.position.y = 0.6;
+        enemyGroup.add(trike);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff2222 }));
+        head.position.set(0, 1.6, 0.2);
+        enemyGroup.add(head);
+
+        const hornGeo = new THREE.ConeGeometry(0.18, 0.5, 6);
+        const hornMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const hornL = new THREE.Mesh(hornGeo, hornMat);
+        hornL.position.set(-0.35, 2.2, 0.2);
+        hornL.rotation.z = 0.3;
+        const hornR = new THREE.Mesh(hornGeo, hornMat);
+        hornR.position.set(0.35, 2.2, 0.2);
+        hornR.rotation.z = -0.3;
+        enemyGroup.add(hornL, hornR);
+      } else if (type === 1) {
+        const cubeMat = new THREE.MeshStandardMaterial({ color: 0x6600cc, roughness: 0.4 });
+        const c1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.8, 2.0), cubeMat);
+        c1.position.y = 1.0;
+        enemyGroup.add(c1);
+
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+        eye.position.set(0, 1.2, 1.05);
+        enemyGroup.add(eye);
+      } else {
+        const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0x88ff00, roughness: 0.2 }));
+        bottle.rotation.x = Math.PI / 2;
+        bottle.position.y = 1.0;
+        enemyGroup.add(bottle);
+
+        const nipple = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 10), new THREE.MeshStandardMaterial({ color: 0xdd2200 }));
+        nipple.rotation.x = Math.PI / 2;
+        nipple.position.set(0, 1.0, 1.5);
+        enemyGroup.add(nipple);
+      }
+
+      scene.add(enemyGroup);
+      enemies.push({ obj: enemyGroup, hp: 2, speed: 0.6 + Math.random() * 0.4, type: type, lane: lane });
+    }
+
+    function spawnBoss() {
+      gameState.bossActive = true;
+      gameState.bossHp = 100;
+      gameState.bossMaxHp = 100;
+
+      document.getElementById('boss-container').style.display = 'flex';
+      showToast('⚠️ 警告！撒旦幼兒園園長【地獄魔嬰】降臨！ ⚠️');
+
+      const bossGroup = new THREE.Group();
+      bossGroup.position.set(0, 0, -120);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(3.6, 20, 20), new THREE.MeshStandardMaterial({ color: 0xaa1111, roughness: 0.3 }));
+      head.position.y = 4.8;
+      bossGroup.add(head);
+
+      const hornGeo = new THREE.ConeGeometry(0.8, 2.8, 12);
+      const hornMat = new THREE.MeshStandardMaterial({ color: 0x110011, roughness: 0.2 });
+      const hL = new THREE.Mesh(hornGeo, hornMat);
+      hL.position.set(-2.2, 7.8, 0);
+      hL.rotation.z = 0.5;
+      const hR = new THREE.Mesh(hornGeo, hornMat);
+      hR.position.set(2.2, 7.8, 0);
+      hR.rotation.z = -0.5;
+      bossGroup.add(hL, hR);
+
+      const eyeGeo = new THREE.SphereGeometry(0.7, 12, 12);
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeL.position.set(-1.2, 5.2, 3.2);
+      const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+      eyeR.position.set(1.2, 5.2, 3.2);
+      bossGroup.add(eyeL, eyeR);
+
+      const pacifier = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.3, 10, 20), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+      pacifier.position.set(0, 3.6, 3.4);
+      bossGroup.add(pacifier);
+
+      const evilHalo = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.2, 8, 30), new THREE.MeshBasicMaterial({ color: 0xff0044 }));
+      evilHalo.rotation.x = Math.PI / 2;
+      evilHalo.position.set(0, 9.2, 0);
+      bossGroup.add(evilHalo);
+
+      scene.add(bossGroup);
+      gameState.bossObj = bossGroup;
+    }
+
+    function defeatBoss() {
+      gameState.bossActive = false;
+      showToast('🎉 聖光大捷！撒旦園長已被糞水神聖洗禮！ 🎉');
+      createExplosion(gameState.bossObj.position.x, gameState.bossObj.position.y + 4, gameState.bossObj.position.z, 80);
+      scene.remove(gameState.bossObj);
+      gameState.bossObj = null;
+      document.getElementById('boss-container').style.display = 'none';
+
+      setTimeout(() => { gameOver(true); }, 1500);
+    }
+
+    /* --- 撒旦園長發射地獄飛刀 (Satan Boss Flying Daggers) --- */
+    function spawnBossBlade(startX, startY, startZ, targetX) {
+      sound.playBladeWhoosh();
+      const bladeGroup = new THREE.Group();
+      bladeGroup.position.set(startX, startY, startZ);
+
+      // 飛刀主刀身（金屬暗紅黑、發出嗜血幽光）
+      const bladeGeo = new THREE.ConeGeometry(0.35, 2.2, 5);
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0x220505,
+        emissive: 0xff0033,
+        emissiveIntensity: 0.6,
+        metalness: 0.9,
+        roughness: 0.2
+      });
+      const blade = new THREE.Mesh(bladeGeo, bladeMat);
+      blade.rotation.x = Math.PI / 2; // 刀尖朝向玩家 (+Z)
+      bladeGroup.add(blade);
+
+      // 飛刀護手 / 雙翼尖刺
+      const guardGeo = new THREE.BoxGeometry(1.6, 0.15, 0.25);
+      const guardMat = new THREE.MeshBasicMaterial({ color: 0xff1100 });
+      const guard = new THREE.Mesh(guardGeo, guardMat);
+      guard.position.z = -0.4;
+      bladeGroup.add(guard);
+
+      // 嗜血猩紅小光暈
+      const light = new THREE.PointLight(0xff0044, 1.8, 8);
+      bladeGroup.add(light);
+
+      scene.add(bladeGroup);
+
+      // 計算向玩家方向飛行的向量
+      const dx = targetX - startX;
+      const dz = 8 - startZ; // 玩家位於 z ≈ 8
+      const dist = Math.hypot(dx, dz);
+      const speed = 1.6 + Math.random() * 0.4;
+
+      bossBlades.push({
+        obj: bladeGroup,
+        vx: (dx / dist) * speed,
+        vz: (dz / dist) * speed,
+        rotSpeed: 0.25 + Math.random() * 0.15,
+        life: 180
+      });
+    }
+
+    function spawnSplashParticles(x, y, z, colorHex = 0x7a431d, isHoly = false) {
+      const pCount = isHoly ? 20 : 16;
+      for (let i = 0; i < pCount; i++) {
+        // 顆粒更細小 (0.06 ~ 0.12)，具有水滴霧化質感
+        const radius = isHoly ? (0.1 + Math.random() * 0.1) : (0.06 + Math.random() * 0.08);
+        const geo = new THREE.SphereGeometry(radius, 6, 6);
+        // 半透明透明水花材質
+        const mat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          transparent: true,
+          opacity: isHoly ? 0.8 : (0.45 + Math.random() * 0.3)
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(
+          x + (Math.random() - 0.5) * 0.2,
+          y + (Math.random() - 0.5) * 0.2,
+          z + (Math.random() - 0.5) * 0.2
+        );
+        scene.add(mesh);
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 0.25 + 0.05;
+        particles.push({
+          mesh: mesh,
+          mat: mat,
+          initialOpacity: mat.opacity,
+          vx: Math.cos(angle) * speed,
+          vy: Math.random() * 0.35 + 0.05,
+          vz: Math.sin(angle) * speed,
+          maxLife: 35,
+          life: 35
+        });
+      }
+    }
+
+    function createExplosion(x, y, z, count = 35) {
+      sound.playSplash();
+      for (let i = 0; i < count; i++) {
+        const isHoly = Math.random() > 0.4;
+        const color = isHoly ? 0xffea00 : 0x6d3c1a;
+        // 爆炸水花也更細膩精緻
+        const radius = isHoly ? (0.12 + Math.random() * 0.1) : (0.08 + Math.random() * 0.12);
+        const mat = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: isHoly ? 0.85 : 0.6
+        });
+        const p = new THREE.Mesh(
+          new THREE.SphereGeometry(radius, 6, 6),
+          mat
+        );
+        p.position.set(x, y, z);
+        scene.add(p);
+        particles.push({
+          mesh: p,
+          mat: mat,
+          initialOpacity: mat.opacity,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: Math.random() * 0.6 + 0.15,
+          vz: (Math.random() - 0.5) * 0.6,
+          maxLife: 45,
+          life: 45
+        });
+      }
+    }
+
+    let lastTime = performance.now();
+    let enemySpawnCounter = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const now = performance.now();
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      if (!gameState.running) {
+        if (orbitControls) orbitControls.update();
+        renderer.render(scene, camera);
+        return;
+      }
+
+      const steerSpeed = 22.0 * dt;
+      if (gameState.keys.left) gameState.targetX = Math.max(-ROAD_WIDTH / 2 + 2.5, gameState.targetX - steerSpeed);
+      if (gameState.keys.right) gameState.targetX = Math.min(ROAD_WIDTH / 2 - 2.5, gameState.targetX + steerSpeed);
+
+      gameState.playerX += (gameState.targetX - gameState.playerX) * 0.18;
+      playerCarGroup.position.x = gameState.playerX;
+      playerCarGroup.rotation.z = (gameState.playerX - gameState.targetX) * 0.08;
+      playerCarGroup.rotation.y = (gameState.playerX - gameState.targetX) * 0.05;
+
+      if (cameraMode === 0) {
+        camera.position.x += (gameState.playerX * 0.6 - camera.position.x) * 0.1;
+        camera.position.y = 5.2;
+        camera.position.z = 15;
+        camera.lookAt(gameState.playerX * 0.3, 1.2, -10);
+      } else {
+        camera.position.x += (gameState.playerX * 0.8 - camera.position.x) * 0.15;
+        camera.position.y = 2.8;
+        camera.position.z = 10.5;
+        camera.lookAt(gameState.playerX, 1.2, -15);
+      }
+
+      // 移除原有的 gameState.keys.shoot 自動連射，強制單發點射
+
+      roadSegments.forEach(seg => {
+        seg.position.z += gameState.speed;
+        if (seg.position.z > TRACK_LENGTH / 2) seg.position.z -= TRACK_LENGTH * 2;
+      });
+      decorations.forEach(dec => {
+        dec.position.z += gameState.speed;
+        if (dec.position.z > 20) dec.position.z -= TRACK_LENGTH * 2;
+      });
+
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.obj.position.z -= b.speed;
+        b.obj.rotation.z += 0.2;
+        b.life--;
+
+        if (Math.random() > 0.4) spawnSplashParticles(b.obj.position.x, b.obj.position.y - 0.2, b.obj.position.z + 0.3, 0x6e3b11);
+
+        let hit = false;
+        if (gameState.bossActive && gameState.bossObj) {
+          const dx = b.obj.position.x - gameState.bossObj.position.x;
+          const dz = b.obj.position.z - gameState.bossObj.position.z;
+          if (Math.abs(dx) < 4.0 && Math.abs(dz) < 4.0) {
+            hit = true;
+            gameState.bossHp -= 6.0; // 單發傷害增強，彌補射速降低帶來的爽快感平衡
+            sound.playSplash();
+            spawnSplashParticles(b.obj.position.x, b.obj.position.y, b.obj.position.z, 0x5a2d0c);
+            document.getElementById('boss-bar-fill').style.width = Math.max(0, (gameState.bossHp / gameState.bossMaxHp) * 100) + '%';
+            if (gameState.bossHp <= 0) defeatBoss();
+          }
+        }
+
+        if (!hit) {
+          for (let j = enemies.length - 1; j >= 0; j--) {
+            const e = enemies[j];
+            const dx = b.obj.position.x - e.obj.position.x;
+            const dz = b.obj.position.z - e.obj.position.z;
+            if (Math.hypot(dx, dz) < 2.0) {
+              hit = true;
+              e.hp -= 2; // 單發直接貫穿擊破小怪
+              sound.playSplash();
+              spawnSplashParticles(e.obj.position.x, e.obj.position.y + 1, e.obj.position.z, 0x5a2d0c);
+              
+              if (e.hp <= 0) {
+                sound.playDevilCry();
+                createExplosion(e.obj.position.x, e.obj.position.y + 1, e.obj.position.z);
+                scene.remove(e.obj);
+                enemies.splice(j, 1);
+                gameState.score++;
+                gameState.faith = Math.min(100, gameState.faith + 25);
+                updateUI();
+
+                if (gameState.score >= 15 && !gameState.bossActive && !gameState.bossObj) spawnBoss();
+              }
+              break;
+            }
+          }
+        }
+
+        if (hit || b.life <= 0 || b.obj.position.z < -220) {
+          scene.remove(b.obj);
+          bullets.splice(i, 1);
+        }
+      }
+
+      enemySpawnCounter += dt;
+      if (enemySpawnCounter > 1.3) {
+        enemySpawnCounter = 0;
+        spawnEnemy();
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        e.obj.position.z += gameState.speed + e.speed;
+
+        const dx = e.obj.position.x - playerCarGroup.position.x;
+        const dz = e.obj.position.z - playerCarGroup.position.z;
+        if (Math.hypot(dx, dz) < 2.2) {
+          sound.playHurt();
+          gameState.hp -= 18;
+          updateUI();
+          createExplosion(e.obj.position.x, 1, e.obj.position.z, 15);
+          scene.remove(e.obj);
+          enemies.splice(i, 1);
+
+          if (gameState.hp <= 0) gameOver(false);
+          continue;
+        }
+
+        if (e.obj.position.z > 20) {
+          scene.remove(e.obj);
+          enemies.splice(i, 1);
+        }
+      }
+
+      // 5. Boss 巡邏與飛刀彈幕技能
+      if (gameState.bossActive && gameState.bossObj) {
+        gameState.bossObj.position.x = Math.sin(now * 0.002) * (ROAD_WIDTH / 2 - 4);
+        gameState.bossObj.position.y = 1.0 + Math.sin(now * 0.005) * 0.8;
+
+        // 定時向超跑猛擲地獄飛刀
+        gameState.lastBossShootTime += dt;
+        if (gameState.lastBossShootTime > gameState.bossShootInterval) {
+          gameState.lastBossShootTime = 0;
+          gameState.bossShootCount++;
+
+          const bx = gameState.bossObj.position.x;
+          const by = gameState.bossObj.position.y + 4.5;
+          const bz = gameState.bossObj.position.z + 2;
+
+          // 普通單發狙擊 / 扇形 3 連發狂暴飛刀
+          if (gameState.bossShootCount % 3 === 0) {
+            // 狂暴 3 散彈飛刀
+            showToast('⚠️ 撒旦園長發動【地獄飛刀狂風】！迅速變道閃避！ ⚠️');
+            spawnBossBlade(bx, by, bz, gameState.playerX - 5);
+            spawnBossBlade(bx, by, bz, gameState.playerX);
+            spawnBossBlade(bx, by, bz, gameState.playerX + 5);
+          } else {
+            // 精準狙擊超跑目前位置
+            spawnBossBlade(bx, by, bz, gameState.playerX);
+          }
+        }
+      }
+
+      // 5.1 Boss 飛刀軌跡更新與刺中玩家超跑判定
+      for (let i = bossBlades.length - 1; i >= 0; i--) {
+        const blade = bossBlades[i];
+        blade.obj.position.x += blade.vx;
+        blade.obj.position.z += blade.vz + gameState.speed;
+        blade.obj.rotation.z += blade.rotSpeed; // 飛刀破空旋轉
+        blade.life--;
+
+        // 刺中超跑判定
+        const dx = blade.obj.position.x - playerCarGroup.position.x;
+        const dz = blade.obj.position.z - playerCarGroup.position.z;
+        if (Math.hypot(dx, dz) < 1.9) {
+          sound.playHurt();
+          gameState.hp -= 22; // 飛刀銳利重創
+          updateUI();
+          createExplosion(blade.obj.position.x, 1.2, blade.obj.position.z, 20);
+          showToast('💥 遭地獄飛刀刺中！車體受損！');
+          scene.remove(blade.obj);
+          bossBlades.splice(i, 1);
+
+          if (gameState.hp <= 0) gameOver(false);
+          continue;
+        }
+
+        if (blade.life <= 0 || blade.obj.position.z > 25) {
+          scene.remove(blade.obj);
+          bossBlades.splice(i, 1);
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.mesh.position.x += p.vx;
+        p.mesh.position.y += p.vy;
+        p.mesh.position.z += p.vz;
+        p.vy -= 0.012;
+        p.life--;
+
+        // 透明度隨生命週期自然淡出漸隱
+        if (p.mat) {
+          p.mat.opacity = (p.life / p.maxLife) * p.initialOpacity;
+        }
+
+        if (p.life <= 0 || p.mesh.position.y < 0) {
+          scene.remove(p.mesh);
+          particles.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function toggleCameraView() {
+      cameraMode = cameraMode === 0 ? 1 : 0;
+      showToast(cameraMode === 0 ? '📷 視角：經典追尾' : '📷 視角：車體近景特寫');
+    }
+
+    function updateUI() {
+      document.getElementById('hp-bar').style.width = Math.max(0, gameState.hp) + '%';
+      document.getElementById('faith-bar').style.width = Math.min(100, gameState.faith) + '%';
+      document.getElementById('score-val').innerText = gameState.score;
+      if (gameState.bossActive) {
+        document.getElementById('boss-bar-fill').style.width = Math.max(0, (gameState.bossHp / gameState.bossMaxHp) * 100) + '%';
+      }
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('event-toast');
+      toast.innerText = text;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -50%) scale(0.9)';
+      }, 1800);
+    }
+
+    function gameOver(isVictory) {
+      gameState.running = false;
+      const modal = document.getElementById('end-modal');
+      const title = document.getElementById('end-title');
+      const desc = document.getElementById('end-desc');
+      const finalScore = document.getElementById('final-score');
+
+      finalScore.innerText = gameState.score;
+      if (isVictory) {
+        title.innerText = '✝ 聖光洗禮大捷！撒旦幼兒園被淨化！ 💩';
+        title.style.color = '#ffd700';
+        desc.innerText = '耶穌與紹元超跑攜手發射的無數神聖糞水飛彈，成功滌淨了撒旦園長與地獄惡童！幼兒園現已改名為聖愛天使班！';
+      } else {
+        title.innerText = '💀 紹元超跑暫時回廠維修！ 💀';
+        title.style.color = '#ff4444';
+        desc.innerText = '撒旦幼兒園的惡童積木攻勢太猛烈！不要灰心，重整聖光旗鼓，再次用神聖糞水制裁他們！';
+      }
+      modal.style.display = 'flex';
+      if (orbitControls) orbitControls.enabled = true;
+    }
+
+    function resetGame() {
+      gameState.hp = 100;
+      gameState.faith = 0;
+      gameState.score = 0;
+      gameState.playerX = 0;
+      gameState.targetX = 0;
+      gameState.bossActive = false;
+      gameState.bossHp = 100;
+      if (gameState.bossObj) {
+        scene.remove(gameState.bossObj);
+        gameState.bossObj = null;
+      }
+      document.getElementById('boss-container').style.display = 'none';
+
+      enemies.forEach(e => scene.remove(e.obj));
+      enemies = [];
+      bossBlades.forEach(b => scene.remove(b.obj));
+      bossBlades = [];
+      bullets.forEach(b => scene.remove(b.obj));
+      bullets = [];
+      particles.forEach(p => scene.remove(p.mesh));
+      particles = [];
+
+      updateUI();
+      if (orbitControls) orbitControls.enabled = false;
+      gameState.running = true;
+    }
+
+    function setupControls() {
+      window.addEventListener('keydown', (e) => {
+        sound.init();
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') gameState.keys.left = true;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') gameState.keys.right = true;
+        if (e.code === 'Space') {
+          // 禁止按住連發：每次敲擊空白鍵觸發一次射擊（受一秒冷卻限制）
+          shootPooMissile();
+        }
+        if (e.code === 'KeyE') triggerHolyUltimate();
+        if (e.code === 'KeyC') toggleCameraView();
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') gameState.keys.left = false;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') gameState.keys.right = false;
+        // Space 鍵放開無須額外處理，已完全杜絕連發
+      });
+
+      document.getElementById('view-btn').addEventListener('click', toggleCameraView);
+
+      document.querySelectorAll('.paint-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.paint-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const hex = parseInt(btn.getAttribute('data-color'), 16);
+          changeCarPaint(hex);
+        });
+      });
+
+      document.getElementById('start-btn').addEventListener('click', () => {
+        sound.init();
+        document.getElementById('start-modal').style.display = 'none';
+        resetGame();
+      });
+      document.getElementById('restart-btn').addEventListener('click', () => {
+        sound.init();
+        document.getElementById('end-modal').style.display = 'none';
+        resetGame();
+      });
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.onload = () => {
+      initThree();
+      animate();
+    };
+  </script>
+</body>
+</html>

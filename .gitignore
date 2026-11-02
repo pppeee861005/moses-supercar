@@ -1,0 +1,9 @@
+# 忽略本地超大原始 STL 及過渡檔（GitHub 單檔上限 100MB，且網頁已採用 car_model_data.js 與 car.glb）
+1a19ad0b2a84cce02291.stl
+car.stl
+car_fast.stl
+
+# 系統與臨時文件
+__pycache__/
+*.pyc
+.vercel
