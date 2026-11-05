@@ -2,25 +2,31 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>摩西超跑：正邪大戰 - 聖水制裁撒旦幼兒園</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星雲出埃及記：摩西劈開高能紅海星雲</title>
   <style>
+    :root {
+      --primary-cyan: #00f3ff;
+      --primary-crimson: #ff0055;
+      --gold: #ffd700;
+      --bg-dark: #05060f;
+    }
     * {
       box-sizing: border-box;
+      user-select: none;
       margin: 0;
       padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
     }
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #0d0614;
-      font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+    body {
+      background-color: var(--bg-dark);
       color: #fff;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
     }
-    #game-container {
+    #canvas-container {
       position: absolute;
       top: 0;
       left: 0;
@@ -28,8 +34,9 @@
       height: 100%;
       z-index: 1;
     }
-    /* HUD Overlays */
-    #hud {
+
+    /* UI 覆蓋層 */
+    .ui-layer {
       position: absolute;
       top: 0;
       left: 0;
@@ -40,1577 +47,868 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 20px;
+      padding: 24px;
     }
-    .hud-top {
+
+    /* 頂部 HUD */
+    .hud-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 20px;
+      pointer-events: auto;
     }
-    .panel {
-      background: rgba(18, 10, 32, 0.75);
-      border: 2px solid #ffcc00;
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.4), inset 0 0 10px rgba(255, 204, 0, 0.2);
-      border-radius: 12px;
+    .hud-title-box {
+      background: rgba(8, 12, 28, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 243, 255, 0.3);
       padding: 12px 20px;
-      backdrop-filter: blur(8px);
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
     }
     .hud-title {
-      font-size: 14px;
-      color: #ffd700;
-      text-transform: uppercase;
+      font-size: 1.25rem;
+      font-weight: 800;
       letter-spacing: 2px;
-      margin-bottom: 4px;
-      font-weight: bold;
-    }
-    .hud-val {
-      font-size: 26px;
-      font-weight: 900;
-      color: #fff;
-      text-shadow: 0 0 8px #ff9900;
-    }
-
-    /* Boss Bar */
-    #boss-container {
-      position: absolute;
-      top: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 480px;
-      max-width: 90%;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-    .boss-name {
-      color: #ff3333;
-      font-size: 18px;
-      font-weight: bold;
-      text-shadow: 0 0 10px #ff0000;
-      letter-spacing: 2px;
-      animation: pulse 1s infinite alternate;
-    }
-    @keyframes pulse {
-      from { opacity: 0.8; transform: scale(0.98); }
-      to { opacity: 1; transform: scale(1.02); }
-    }
-    .boss-bar-bg {
-      width: 100%;
-      height: 22px;
-      background: #330000;
-      border: 2px solid #ff4444;
-      border-radius: 11px;
-      overflow: hidden;
-      box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
-    }
-    #boss-bar-fill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, #ff9900, #ff0033);
-      transition: width 0.1s linear;
-    }
-
-    /* Bars */
-    .bar-wrap {
-      width: 220px;
-      height: 16px;
-      background: rgba(0,0,0,0.6);
-      border-radius: 8px;
-      border: 1px solid #aaa;
-      overflow: hidden;
-      margin-top: 5px;
-    }
-    #hp-bar {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, #00ff88, #33cc33);
-      transition: width 0.2s ease;
-    }
-    #faith-bar {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #ffcc00, #ffdd55);
-      box-shadow: 0 0 10px #ffcc00;
-      transition: width 0.2s ease;
-    }
-
-    /* Bottom Info & Skill */
-    .hud-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .skill-card {
-      background: rgba(20, 10, 35, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 10px 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
-    }
-    .skill-key {
-      background: #ffcc00;
-      color: #111;
-      font-weight: 900;
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    .skill-text {
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    /* Floating Dialog/Messages */
-    #event-toast {
-      position: absolute;
-      top: 25%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 30px;
-      font-weight: 900;
-      color: #ffd700;
-      text-shadow: 0 0 20px #ff6600, 0 0 40px #ff0000;
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.3s;
-      pointer-events: none;
-      text-align: center;
-      z-index: 100;
-      max-width: 80%;
-    }
-
-    /* Start / Showcase Overlay */
-    .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1000;
-      background: rgba(10, 5, 20, 0.85);
-      backdrop-filter: blur(10px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: linear-gradient(145deg, #1f1133, #0f071a);
-      border: 3px solid #ffcc00;
-      box-shadow: 0 0 40px rgba(255, 170, 0, 0.6);
-      border-radius: 20px;
-      padding: 35px 45px;
-      max-width: 650px;
-      width: 90%;
-      text-align: center;
-      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes popIn {
-      0% { transform: scale(0.7); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .modal-title {
-      font-size: 32px;
-      font-weight: 900;
-      color: #ffd700;
-      text-shadow: 0 0 15px #ffaa00;
-      margin-bottom: 15px;
-      letter-spacing: 2px;
-    }
-    .modal-desc {
-      font-size: 15px;
-      line-height: 1.8;
-      color: #ddd;
-      margin-bottom: 20px;
-    }
-
-    /* Color switch buttons */
-    .paint-selector {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 25px;
-      align-items: center;
-    }
-    .paint-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 3px solid #fff;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .paint-btn:hover, .paint-btn.active {
-      transform: scale(1.25);
-      box-shadow: 0 0 12px #ffcc00;
-    }
-
-    .btn-start {
-      background: linear-gradient(90deg, #ff9900, #ffcc00);
-      border: none;
-      padding: 16px 45px;
-      font-size: 22px;
-      font-weight: 900;
-      color: #1a052e;
-      border-radius: 50px;
-      cursor: pointer;
-      box-shadow: 0 0 25px rgba(255, 204, 0, 0.8);
-      transition: all 0.2s;
-    }
-    .btn-start:hover {
-      transform: scale(1.06);
-      box-shadow: 0 0 35px rgba(255, 204, 0, 1);
-    }
-
-    /* Model Status Bar */
-    #model-loading-badge {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 13px;
-      color: #ffea70;
-      border: 1px solid #ffd700;
+      background: linear-gradient(90deg, #ff0055, #00f3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       display: flex;
       align-items: center;
       gap: 8px;
-      z-index: 100;
     }
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid #ffea70;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .hud-sub {
+      font-size: 0.75rem;
+      color: #7b8ea8;
+      letter-spacing: 1px;
+      margin-top: 4px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* --- 開頭電影感儀式感動畫 (Cinematic Intro) --- */
-    #intro-screen {
+    .status-panel {
+      background: rgba(8, 12, 28, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 0, 85, 0.3);
+      padding: 10px 16px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .status-val {
+      color: var(--primary-cyan);
+      font-weight: bold;
+    }
+    .danger {
+      color: var(--primary-crimson) !important;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.4; }
+    }
+
+    /* 浮動台詞/分鏡劇院視窗 */
+    .story-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      pointer-events: auto;
+    }
+
+    .dialogue-card {
+      width: 100%;
+      background: rgba(10, 15, 30, 0.88);
+      border: 1px solid rgba(0, 243, 255, 0.4);
+      box-shadow: 0 0 35px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 243, 255, 0.2);
+      border-radius: 14px;
+      padding: 24px 30px;
+      backdrop-filter: blur(18px);
+      position: relative;
+      transition: all 0.4s ease;
+    }
+    .dialogue-card::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 10%;
+      width: 80%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary-cyan), transparent);
+    }
+
+    .character-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .character-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      letter-spacing: 1.5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(0, 243, 255, 0.12);
+      border: 1px solid var(--primary-cyan);
+      color: var(--primary-cyan);
+    }
+    .character-tag.pharaoh {
+      background: rgba(255, 0, 85, 0.12);
+      border-color: var(--primary-crimson);
+      color: var(--primary-crimson);
+    }
+    .character-tag.narrator {
+      background: rgba(255, 215, 0, 0.12);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .chapter-tag {
+      font-size: 0.75rem;
+      color: #8da4be;
+      font-family: monospace;
+      letter-spacing: 1.5px;
+    }
+
+    .romance-quote {
+      font-size: 1.22rem;
+      line-height: 1.75;
+      letter-spacing: 0.5px;
+      color: #f0f6fc;
+      margin: 10px 0 16px 0;
+      min-height: 64px;
+      font-style: italic;
+    }
+    .comedy-note {
+      font-size: 0.92rem;
+      color: #ffd166;
+      background: rgba(255, 209, 102, 0.08);
+      border-left: 3px solid #ffd166;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* 控制按鈕列 */
+    .controls-bar {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 16px;
+      width: 100%;
+    }
+    .btn {
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 243, 255, 0.4);
+      background: rgba(0, 30, 60, 0.65);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(8px);
+    }
+    .btn:hover {
+      background: rgba(0, 243, 255, 0.25);
+      border-color: var(--primary-cyan);
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+      transform: translateY(-2px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(255, 0, 85, 0.7), rgba(0, 243, 255, 0.7));
+      border: 1px solid #fff;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+    }
+
+    /* 摩西引力權杖蓄力進度條 */
+    .staff-gauge-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin-top: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+    .staff-gauge-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff0055, #ffd700, #00f3ff);
+      box-shadow: 0 0 10px #00f3ff;
+      transition: width 0.3s ease;
+    }
+
+    /* 震撼全螢幕警告特效 */
+    #flash-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at center, #1b0a2a 0%, #08030e 100%);
-      z-index: 2000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 30px;
-      text-align: center;
-      cursor: pointer;
-      transition: opacity 1.2s ease, transform 1.2s ease;
-    }
-    #intro-screen.fade-out {
-      opacity: 0;
-      transform: scale(1.15);
       pointer-events: none;
-    }
-    .intro-cross {
-      font-size: 64px;
-      color: #ffd700;
-      text-shadow: 0 0 35px #ffaa00, 0 0 70px #ff6600;
-      animation: floatCross 3s ease-in-out infinite alternate;
-      margin-bottom: 20px;
-    }
-    @keyframes floatCross {
-      from { transform: translateY(0px) scale(0.95); filter: drop-shadow(0 0 20px #ffbb00); }
-      to { transform: translateY(-12px) scale(1.05); filter: drop-shadow(0 0 45px #ffea00); }
-    }
-    .intro-title {
-      font-size: 42px;
-      font-weight: 900;
-      letter-spacing: 6px;
-      background: linear-gradient(180deg, #ffffff 0%, #ffd700 60%, #ff8800 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 25px;
-      text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
-    }
-    .intro-story-box {
-      max-width: 680px;
-      font-size: 20px;
-      line-height: 2.1;
-      color: #e2d9f3;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
-      min-height: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-    }
-    .intro-story-line {
+      z-index: 5;
+      background: white;
       opacity: 0;
-      transform: translateY(15px);
-      transition: opacity 0.8s ease, transform 0.8s ease;
-    }
-    .intro-story-line.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .intro-hint {
-      margin-top: 40px;
-      font-size: 15px;
-      color: #a894c7;
-      letter-spacing: 3px;
-      animation: blinkText 1.5s infinite;
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      padding: 8px 24px;
-      border-radius: 30px;
-      background: rgba(255, 255, 255, 0.05);
-    }
-    @keyframes blinkText {
-      0%, 100% { opacity: 0.4; transform: scale(0.98); }
-      50% { opacity: 1; transform: scale(1.02); }
+      transition: opacity 0.4s ease;
     }
 
-    /* Floating View Switcher */
-    #view-btn {
-      position: absolute;
-      bottom: 90px;
-      right: 25px;
-      background: rgba(20, 10, 35, 0.85);
-      border: 2px solid #ffd700;
-      color: #ffd700;
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      z-index: 20;
-      pointer-events: auto;
+    /* 響應式優化 */
+    @media (max-width: 768px) {
+      .hud-header { flex-direction: column; gap: 10px; }
+      .dialogue-card { padding: 18px 20px; }
+      .romance-quote { font-size: 1.05rem; }
+      .controls-bar { flex-wrap: wrap; }
     }
+
+    /* ================= SVG 卡通娛樂層 ================= */
+    #svg-stage {
+      position: absolute; inset: 0; z-index: 6; pointer-events: none;
+      width: 100%; height: 100%;
+    }
+    .actor { opacity: 0; transition: opacity .6s ease, transform 1.2s cubic-bezier(.5,1.6,.4,1); }
+    .bob { animation: bob 2s ease-in-out infinite; transform-box: fill-box; }
+    @keyframes bob { 50% { transform: translateY(-14px); } }
+    .wiggle { animation: wiggle .5s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+    @keyframes wiggle { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+    .spin { animation: spin 3s linear infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .glow { animation: glow 0.8s ease-in-out infinite alternate; }
+    @keyframes glow { from { opacity: .4; } to { opacity: 1; } }
+    .shake { animation: shake .15s linear infinite; transform-box: fill-box; }
+    @keyframes shake { 0% { transform: translate(0,0);} 25% { transform: translate(3px,-2px);} 75% { transform: translate(-3px,2px);} }
+    .float-up { animation: floatUp 2.4s ease-in infinite; }
+    @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
+    .blink-eye { animation: eye 3s infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes eye { 0%,92%,100% { transform: scaleY(1);} 95% { transform: scaleY(.1);} }
+    .bubble text { font: bold 15px "Microsoft JhengHei", sans-serif; fill: #111; }
+
+    /* 依幕次顯示角色 */
+    body[data-act="0"] #moses, body[data-act="0"] #toll { opacity: 1; }
+    body[data-act="1"] #moses, body[data-act="1"] #pharaoh, body[data-act="1"] #pudding { opacity: 1; }
+    body[data-act="2"] #moses, body[data-act="2"] #winupdate, body[data-act="2"] #bolts { opacity: 1; }
+    body[data-act="3"] #moses, body[data-act="3"] #shrimp, body[data-act="3"] #hearts { opacity: 1; }
+    body[data-act="4"] #pharaoh, body[data-act="4"] #wave, body[data-act="4"] #victory { opacity: 1; }
+    body[data-act="2"] #moses-staff { animation: wiggle .2s infinite; }
+    body[data-act="4"] #pharaoh { transform: translate(0, 60px) rotate(-20deg); }
+    #shrimp { transform: translateX(200px); }
+    body[data-act="3"] #shrimp { transform: translateX(0); }
   </style>
-
-  <!-- 本地免連網 Three.js 核心庫與控制套件 -->
-  <script src="./three.min.js"></script>
-  <script src="./STLLoader.js"></script>
-  <script src="./GLTFLoader.js"></script>
-  <script src="./OrbitControls.js"></script>
-  <!-- 內嵌超跑 3D 數據 (零 CORS、零網路依賴、保證秒開) -->
-  <script src="./car_model_data.js"></script>
+  <!-- 引入 Three.js -->
+  <script src="three.min.js"></script>
 </head>
 <body>
 
-  <!-- 開頭儀式感動畫畫面 (V1.01 史詩正邪大戰序幕) -->
-  <div id="intro-screen">
-    <div class="intro-cross">✝</div>
-    <h1 class="intro-title">摩西超跑 ‧ 聖光啟示錄</h1>
-    <div class="intro-story-box">
-      <div class="intro-story-line show" id="story-text">
-        黑暗籠罩了大地，撒旦幼兒園釋放了地獄惡念...
-      </div>
-    </div>
-    <div class="intro-hint" id="intro-skip-hint">點擊任意處 ‧ 聆聽福音出征 (可跳過)</div>
-  </div>
+  <!-- Three.js 3D 渲染容器 -->
+  <div id="canvas-container"></div>
+  <div id="flash-overlay"></div>
 
-  <div id="game-container"></div>
+  <!-- SVG 卡通娛樂層 -->
+  <svg id="svg-stage" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="orb"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#ffd700"/><stop offset="1" stop-color="#ffd70000"/></radialGradient>
+    </defs>
 
-  <div id="model-loading-badge">
-    <div class="spinner" id="model-spinner"></div>
-    <span id="model-status">載入 3D 手工超跑中...</span>
-  </div>
+    <!-- 摩西（Q版太空鬍子艦長） -->
+    <g id="moses" class="actor" transform="translate(140,330)">
+      <g class="bob">
+        <ellipse cx="80" cy="120" rx="60" ry="22" fill="#00f3ff33" stroke="#00f3ff"/>
+        <rect x="45" y="40" width="70" height="80" rx="20" fill="#2b4c9b"/>
+        <circle cx="80" cy="20" r="34" fill="#ffd9b0"/>
+        <path d="M48 28 Q80 95 112 28 Q100 50 80 52 Q60 50 48 28Z" fill="#eee"/>
+        <circle cx="80" cy="20" r="44" fill="none" stroke="#9fefff" stroke-width="3" opacity=".6"/>
+        <ellipse class="blink-eye" cx="68" cy="14" rx="4" ry="5" fill="#222"/>
+        <ellipse class="blink-eye" cx="92" cy="14" rx="4" ry="5" fill="#222"/>
+        <g id="moses-staff" class="wiggle" style="transform-box:fill-box;transform-origin:bottom center">
+          <rect x="128" y="-40" width="6" height="150" fill="#8b5a2b"/>
+          <circle class="glow" cx="131" cy="-46" r="22" fill="url(#orb)"/>
+        </g>
+      </g>
+    </g>
 
-  <button id="view-btn">📷 切換視角 (C 鍵)</button>
+    <!-- 過路費罰單 -->
+    <g id="toll" class="actor" transform="translate(330,250)">
+      <g class="bob"><g class="bubble">
+        <rect width="230" height="70" rx="14" fill="#fff"/>
+        <path d="M20 70 L0 95 L45 70Z" fill="#fff"/>
+        <text x="16" y="30">🧾 欠繳蟲洞過路費</text>
+        <text x="16" y="55" fill="#d00">NT$35 逾期 999 年</text>
+      </g></g>
+    </g>
 
-  <!-- HUD -->
-  <div id="hud">
-    <div class="hud-top">
-      <div class="panel">
-        <div class="hud-title">聖光生命 (HP)</div>
-        <div class="bar-wrap">
-          <div id="hp-bar"></div>
+    <!-- 法老（Q版） -->
+    <g id="pharaoh" class="actor" transform="translate(1270,320)">
+      <g class="shake">
+        <rect x="20" y="70" width="100" height="90" rx="20" fill="#7a0030"/>
+        <path d="M20 40 L70 -30 L120 40 L120 90 L20 90Z" fill="#ffd700" stroke="#1a3cff" stroke-width="5" stroke-dasharray="14 8"/>
+        <circle cx="70" cy="55" r="30" fill="#c98b5a"/>
+        <path d="M55 48 l10 4 M85 48 l-10 4" stroke="#000" stroke-width="4"/>
+        <path d="M55 70 Q70 60 85 70" stroke="#000" stroke-width="4" fill="none"/>
+        <text x="20" y="-45" font-size="32" class="float-up">💢</text>
+      </g>
+    </g>
+
+    <!-- 布丁 -->
+    <g id="pudding" class="actor" transform="translate(1080,200)">
+      <g class="wiggle">
+        <path d="M10 70 L20 20 Q45 5 70 20 L80 70Z" fill="#ffd166"/>
+        <path d="M20 20 Q45 5 70 20 Q45 35 20 20Z" fill="#7b3f00"/>
+        <text x="18" y="58" font-size="14" fill="#7b3f00">摩西的</text>
+      </g>
+      <text x="-20" y="105" font-size="16" fill="#fff">陛下…這布丁吃嗎？</text>
+    </g>
+
+    <!-- Windows 更新視窗 -->
+    <g id="winupdate" class="actor" transform="translate(600,140)">
+      <g class="shake">
+        <rect width="400" height="160" fill="#0078d7" rx="6"/>
+        <text x="30" y="55" fill="#fff" font-size="24">⚙ 正在更新神杖…</text>
+        <text x="30" y="90" fill="#fff" font-size="16">請勿關閉電源（1/35）</text>
+        <g transform="translate(330,110)"><circle class="spin" r="18" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="20 12"/></g>
+        <text x="30" y="130" fill="#ffe" font-size="14">法老：可以等你一下沒關係</text>
+      </g>
+    </g>
+
+    <!-- 閃電 -->
+    <g id="bolts" class="actor">
+      <path class="glow" d="M800 0 L760 200 L820 200 L770 420" stroke="#fff" stroke-width="6" fill="none"/>
+      <path class="glow" d="M300 0 L340 150 L290 150 L350 330" stroke="#00f3ff" stroke-width="4" fill="none"/>
+      <path class="glow" d="M1300 0 L1260 160 L1320 160 L1270 340" stroke="#ff0055" stroke-width="4" fill="none"/>
+    </g>
+
+    <!-- 宇宙發光巨蝦 -->
+    <g id="shrimp" class="actor" transform-origin="1250 400">
+      <g transform="translate(1150,330)" class="bob">
+        <path d="M0 60 Q60 -20 160 30 Q200 60 170 100 Q100 130 30 100Z" fill="#ff7b54" stroke="#ffd" stroke-width="3"/>
+        <path d="M40 40 Q50 80 40 105 M75 30 Q85 75 75 115 M110 32 Q120 75 110 112" stroke="#ffbca0" stroke-width="4" fill="none"/>
+        <circle cx="150" cy="45" r="10" fill="#fff"/><circle cx="153" cy="45" r="5" fill="#000"/>
+        <path class="wiggle" d="M160 35 Q220 -40 260 -20 M165 40 Q240 0 270 20" stroke="#ffd" stroke-width="3" fill="none"/>
+        <text x="20" y="-10" font-size="22" fill="#fff">？？？蛤</text>
+      </g>
+    </g>
+
+    <!-- 愛心 -->
+    <g id="hearts" class="actor" font-size="36">
+      <text x="400" y="600" class="float-up">💖</text>
+      <text x="520" y="650" class="float-up" style="animation-delay:.6s">💕</text>
+      <text x="1000" y="620" class="float-up" style="animation-delay:1.2s">✨</text>
+      <text x="1120" y="660" class="float-up" style="animation-delay:1.8s">💖</text>
+    </g>
+
+    <!-- 回湧星雲浪 -->
+    <g id="wave" class="actor">
+      <path fill="#ff005588">
+        <animate attributeName="d" dur="1.6s" repeatCount="indefinite"
+          values="M0 900 L0 520 Q200 440 400 520 T800 520 T1200 520 T1600 520 L1600 900Z;
+                  M0 900 L0 520 Q200 600 400 520 T800 520 T1200 520 T1600 520 L1600 900Z;
+                  M0 900 L0 520 Q200 440 400 520 T800 520 T1200 520 T1600 520 L1600 900Z"/>
+      </path>
+      <text x="1230" y="300" font-size="22" fill="#fff" class="float-up">叮咚～開機音樂🎵</text>
+    </g>
+
+    <!-- 勝利字樣 -->
+    <g id="victory" class="actor">
+      <text x="800" y="200" text-anchor="middle" font-size="64" font-weight="900" fill="#ffd700" stroke="#ff0055" stroke-width="2">
+        🎉 抵達應許星系！🎉
+        <animateTransform attributeName="transform" type="scale" values="1;1.05;1" dur="1s" repeatCount="indefinite" additive="sum"/>
+      </text>
+    </g>
+  </svg>
+
+  <!-- UI 介面 -->
+  <div class="ui-layer">
+    <!-- 頂部 HUD -->
+    <div class="hud-header">
+      <div class="hud-title-box">
+        <div class="hud-title">
+          <span>⚡ MOSES PROTOCOL // 摩西協議</span>
         </div>
-        <div class="hud-title" style="margin-top: 8px;">耶穌聖靈充能 (滿能按 E)</div>
-        <div class="bar-wrap">
-          <div id="faith-bar"></div>
+        <div class="hud-sub">紅海超重力等離子體星雲・深空脫離戰</div>
+      </div>
+
+      <div class="status-panel">
+        <div class="status-row">
+          <span>法老反物質艦隊追擊距離:</span>
+          <span class="status-val danger" id="pharaoh-dist">4.2 AU (急速迫近)</span>
+        </div>
+        <div class="status-row">
+          <span>超光速權杖 (Moses Staff 3000):</span>
+          <span class="status-val" id="staff-status">待命 (99.8%)</span>
+        </div>
+        <div class="status-row">
+          <span>星雲等離子厚度:</span>
+          <span class="status-val" id="nebula-status">無限緻密・無法通行</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中下部 浪漫又搞笑的對白卡片 -->
+    <div class="story-center">
+      <div class="dialogue-card">
+        <div class="character-info">
+          <div class="character-tag" id="actor-badge">🚀 摩西艦長</div>
+          <div class="chapter-tag" id="chapter-badge">ACT I / 序幕：宇宙之愛與路費</div>
+        </div>
+
+        <div class="romance-quote" id="romance-text">
+          「如果在十億光年的寂寥裡只能與你對望一次，我情願用引力波將這片浩瀚星海撕裂成浪漫的長廊。」
+        </div>
+
+        <div class="comedy-note" id="comedy-text">
+          💡 【通訊吐槽】：副艦長提醒，後方的法老艦隊加速追殺，純粹是因為摩西上週走星際高速公路逃了 35 塊錢的蟲洞過路費。
+        </div>
+
+        <div class="staff-gauge-container">
+          <div class="staff-gauge-fill" id="gauge-bar"></div>
         </div>
       </div>
 
-      <!-- Boss HP Bar -->
-      <div id="boss-container">
-        <div class="boss-name" id="boss-title">👿 撒旦園長 - 地獄魔嬰降臨 👿</div>
-        <div class="boss-bar-bg">
-          <div id="boss-bar-fill"></div>
-        </div>
+      <div class="controls-bar">
+        <button class="btn" id="prev-btn" onclick="prevAct()">⏮ 上一幕</button>
+        <button class="btn btn-primary" id="next-btn" onclick="nextAct()">觸發下一步：引力闢海 ⏩</button>
+        <button class="btn" id="auto-btn" onclick="toggleAuto()">自動演繹：關閉</button>
+        <button class="btn" onclick="playBeep(440, 0.2)">🔊 音效測試</button>
       </div>
-
-      <div class="panel" style="text-align: right;">
-        <div class="hud-title">擊破幼兒園惡魔</div>
-        <div class="hud-val" id="score-val">0</div>
-        <div class="hud-title" style="margin-top: 6px;">神聖時速</div>
-        <div class="hud-val" id="speed-val" style="color: #00ffea; font-size: 22px;">320 KM/H</div>
-      </div>
-    </div>
-
-    <div id="event-toast"></div>
-
-    <div class="hud-bottom">
-      <div class="skill-card">
-        <div class="skill-key">A / D 或 ◀ ▶</div>
-        <div class="skill-text">超跑漂移變道</div>
-      </div>
-      <div class="skill-card">
-        <div class="skill-key">SPACE 空白鍵</div>
-        <div class="skill-text">發射 💩 糞水飛彈 (1秒1發點射)</div>
-      </div>
-      <div class="skill-card" style="border-color: #ffd700;">
-        <div class="skill-key" style="background:#ff0055; color:#fff;">E 鍵</div>
-        <div class="skill-text">耶穌基督聖光滌淨 (大招)</div>
-      </div>
-      <div class="skill-card" style="border-color: #00ffcc;">
-        <div class="skill-key" style="background:#00bbbb; color:#fff;">C 鍵</div>
-        <div class="skill-text">切換超跑近景視角</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Start / Showroom Dialog -->
-  <div class="modal-overlay" id="start-modal">
-    <div class="modal-content">
-      <h1 class="modal-title">✨ 摩西超跑：手工匠心 × 聖光征途 ✨</h1>
-      <p class="modal-desc">
-        您親手打造的 <b>90 萬面高精超跑</b> 已就位！<br>
-        開場展示台支援 <b>滑鼠左鍵拖曳 360 度旋轉賞車</b>、滾輪拉近拉遠！<br>
-        請挑選您喜愛的神聖車漆外觀：
-      </p>
-
-      <!-- 車漆選擇 -->
-      <div class="paint-selector">
-        <span style="font-size:14px; color:#ffd700; font-weight:bold;">客製車漆：</span>
-        <div class="paint-btn active" style="background: #ffd700;" data-color="0xd4af37" title="聖光曜金"></div>
-        <div class="paint-btn" style="background: #e62020;" data-color="0xcc1111" title="烈焰魔紅"></div>
-        <div class="paint-btn" style="background: #111111;" data-color="0x151515" title="黑曜暗影"></div>
-        <div class="paint-btn" style="background: #00d4ff;" data-color="0x00a8e8" title="聖泉青瓷"></div>
-        <div class="paint-btn" style="background: #e0e0e0;" data-color="0xdcdcdc" title="手工雕刻原色白模"></div>
-      </div>
-
-      <button class="btn-start" id="start-btn">發動引擎 ‧ 出征淨化撒旦幼兒園！</button>
-    </div>
-  </div>
-
-  <!-- Game Over / Victory Modal -->
-  <div class="modal-overlay" id="end-modal" style="display:none;">
-    <div class="modal-content">
-      <h1 class="modal-title" id="end-title">聖光普照 ‧ 大獲全勝！</h1>
-      <p class="modal-desc" id="end-desc">撒旦幼兒園被神聖糞水徹底洗滌，惡魔幼兒已乖乖回到搖籃睡覺！</p>
-      <div style="font-size: 24px; font-weight: bold; margin-bottom: 25px; color:#ffd700;">
-        最終擊殺數: <span id="final-score">0</span>
-      </div>
-      <button class="btn-start" id="restart-btn">再次聖光洗禮</button>
     </div>
   </div>
 
   <script>
-    /* --- 音效合成器 (Web Audio API) --- */
-    class SoundFX {
-      constructor() { this.ctx = null; }
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
-        }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+    /* =========================================================
+       1. 劇情與浪漫/搞笑腳本數據
+       ========================================================= */
+    const storyScript = [
+      {
+        act: "ACT 1 / 困於星雲邊境",
+        actor: "🚀 先知艦長・摩西",
+        actorType: "moses",
+        quote: "「我們背後是十萬艘法老帝國的反物質巡洋艦，身前是能溶化恆星的紅海超聚變星雲。親愛的，抓緊我的量子力學講義，我要為你劈開一道光。」",
+        comedy: "🚨 【星艦廣播】：所有難民請收好奶茶與爆米花，引力撕裂星雲時可能會有輕微暈車，請勿將頭手伸出防護力場外面。",
+        nebulaState: "closed",
+        cameraDist: 180,
+        staffCharge: 20,
+        pharaohDist: "4.2 AU (急速迫近)",
+        nebulaStatus: "緻密高熱・阻擋前路",
+        staffStatus: "引力電量 20%"
+      },
+      {
+        act: "ACT 2 / 法老的星際追緝廣播",
+        actor: "👑 法老帝國總指揮艦",
+        actorType: "pharaoh",
+        quote: "「摩西！你就算逃到事件視界邊緣，也休想抹去你留在帝國宮廷資料庫裡的合約！整個宇宙只有我能支配你！」",
+        comedy: "📡 【公共頻道攔截】：法老副官悄悄插話：『陛下，他偷跑其實沒關係，但他在宮廷冰箱留下的那罐貼了名字的布丁您到底吃不吃？』",
+        nebulaState: "closed",
+        cameraDist: 150,
+        staffCharge: 45,
+        pharaohDist: "1.8 AU (進入射程)",
+        nebulaStatus: "等離子火網狂暴跳動",
+        staffStatus: "引力超載 45%"
+      },
+      {
+        act: "ACT 3 / 舉杖！量子劈海神蹟",
+        actor: "✨ 摩西與超維權杖",
+        actorType: "moses",
+        quote: "「以奇異物質之名，願引力常數為你俯首稱臣！——我劈開的不是冰冷星雲，而是我們通往自由的永恆誓約！」",
+        comedy: "💥 【神蹟發生】：摩西按下引力杖上的『一鍵排海』紅色按鈕，但因為是二手市場買的，儀表板跳出 Windows 更新警告：『請勿關閉電源（1/35）』。",
+        nebulaState: "parting",
+        cameraDist: 120,
+        staffCharge: 85,
+        pharaohDist: "0.6 AU (導彈已鎖定)",
+        nebulaStatus: "【核心裂開！！】等離子牆左右退避！",
+        staffStatus: "超維力場全開 85%"
+      },
+      {
+        act: "ACT 4 / 奇蹟走廊：漫步紅海之底",
+        actor: "🌌 宇宙旁白",
+        actorType: "narrator",
+        quote: "「十億道赤紅等離子浪潮凝固成通天巨壁，如同兩道燃燒的玫瑰羽翼，在深淵之中為迷途者鋪陳一條璀璨無垠的銀河之路。」",
+        comedy: "🦞 【生態發現】：難民船員從舷窗望出去，發現星雲深處被分開後，有幾隻長達三千公里的『宇宙發光巨蝦』一臉懵逼地看著他們開過去。",
+        nebulaState: "parted",
+        cameraDist: 90,
+        staffCharge: 100,
+        pharaohDist: "進入走廊入口！",
+        nebulaStatus: "穩定時空走廊 (通航中)",
+        staffStatus: "神聖過載 100% (極致穩定)"
+      },
+      {
+        act: "ACT 5 / 終章：回合與法老的悲劇",
+        actor: "👑 法老艦隊最後通訊",
+        actorType: "pharaoh",
+        quote: "「既然你開了一條路，朕就踏著星塵把你追回！——等等，為什麼這片等離子海在向中央坍縮？！摩西你算計我！」",
+        comedy: "🌊 【水淹大軍】：摩西權杖解除相位鎖，百萬光年紅海星雲瞬間回湧合攏！法老全艦隊被高能等離子打到短路，集體播放開機音樂並原地熄火。",
+        nebulaState: "collapse",
+        cameraDist: 140,
+        staffCharge: 0,
+        pharaohDist: "被星雲吞噬 (信號全斷)",
+        nebulaStatus: "恢復平靜・自由之境",
+        staffStatus: "能量冷卻完畢 (勝利抵達應許星系)"
       }
-      playPoopShot() {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+    ];
+
+    let currentActIndex = 0;
+    let autoPlayInterval = null;
+
+    /* =========================================================
+       2. Web Audio API 零依賴科幻環境合成音
+       ========================================================= */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 520, duration = 0.15, type = 'sine') {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function playPartingSound() {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(460, now);
-        osc.frequency.exponentialRampToValueAtTime(75, now + 0.18);
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.2);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.18);
-      }
-      playSplash() {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const bufferSize = this.ctx.sampleRate * 0.15;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
-        }
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(800, now);
-        filter.frequency.linearRampToValueAtTime(200, now + 0.15);
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.35, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-        noise.start(now);
-      }
-      playHolyHymn() {
-        if (!this.ctx) return;
-        const freqs = [523.25, 659.25, 783.99, 1046.50];
-        freqs.forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.04);
-          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.04);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.2);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(this.ctx.currentTime + idx * 0.04);
-          osc.stop(this.ctx.currentTime + 1.2);
-        });
-      }
-      playHurt() {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.25);
-      }
-      playDevilCry() {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.linearRampToValueAtTime(250, now + 0.15);
-        osc.frequency.linearRampToValueAtTime(450, now + 0.3);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.35);
-      }
-      // 飛刀破空呼嘯聲 (咻咻破空音)
-      playBladeWhoosh() {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(1200, now);
-        osc.frequency.exponentialRampToValueAtTime(300, now + 0.2);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.2);
-      }
-      // 開場序幕神聖大鐘聲 (Cathedral Bell / 莊嚴儀式感)
-      playCathedralBell() {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        // 基頻與多重鐘鳴泛音
-        const harmonics = [220, 442, 665, 890, 1340];
-        harmonics.forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now);
-          const initialVol = 0.25 / (idx + 1);
-          gain.gain.setValueAtTime(initialVol, now);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now);
-          osc.stop(now + 2.8);
-        });
-      }
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 1.2);
+      } catch(e) {}
     }
 
-    const sound = new SoundFX();
+    /* =========================================================
+       3. Three.js 3D 紅海星雲與摩西飛船粒子引擎
+       ========================================================= */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x05060f, 0.0035);
 
-    /* --- GAME ENGINE & THREE.JS LOGIC --- */
-    const ROAD_WIDTH = 26;
-    const ROAD_LANES = [-8.5, -4.25, 0, 4.25, 8.5];
-    const TRACK_LENGTH = 300;
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 15, 180);
 
-    let scene, camera, renderer, orbitControls;
-    let playerCarGroup;
-    let stlLoaded = false;
-    let stlCarMesh = null;
-    let currentPaintColor = 0xd4af37;
-    let cameraMode = 0;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
 
-    let gameState = {
-      running: false,
-      hp: 100,
-      faith: 0,
-      score: 0,
-      speed: 2.2,
-      playerX: 0,
-      targetX: 0,
-      bossActive: false,
-      bossHp: 100,
-      bossMaxHp: 100,
-      bossObj: null,
-      keys: { left: false, right: false, shoot: false, ult: false },
-      lastShootTime: 0,
-      shootCooldown: 1000, // 嚴格限制一秒只能發射一發 (1000ms 冷卻)
-      // Boss 飛刀相關
-      lastBossShootTime: 0,
-      bossShootInterval: 1.8,
-      bossShootCount: 0,
-    };
-
-    let bullets = [];
-    let enemies = [];
-    let bossBlades = []; // 撒旦園長飛刀陣列
-    let particles = [];
-    let roadSegments = [];
-    let decorations = [];
-
-    function initThree() {
-      const container = document.getElementById('game-container');
-      scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x130626, 0.007);
-
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 5, 14);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      container.appendChild(renderer.domElement);
-
-      // OrbitControls
-      orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-      orbitControls.enableDamping = true;
-      orbitControls.dampingFactor = 0.05;
-      orbitControls.maxDistance = 25;
-      orbitControls.minDistance = 4;
-      orbitControls.target.set(0, 1.2, 8);
-
-      // Lights
-      const ambientLight = new THREE.AmbientLight(0xfff5e6, 0.85);
-      scene.add(ambientLight);
-
-      const dirLight = new THREE.DirectionalLight(0xffea88, 1.5);
-      dirLight.position.set(20, 35, 25);
-      dirLight.castShadow = true;
-      scene.add(dirLight);
-
-      const fillLight = new THREE.DirectionalLight(0x88ccff, 0.7);
-      fillLight.position.set(-20, 20, -20);
-      scene.add(fillLight);
-
-      const carSpotLight = new THREE.PointLight(0xffd700, 2.5, 30);
-      carSpotLight.position.set(0, 6, 8);
-      scene.add(carSpotLight);
-
-      createRoad();
-      createPlayerCar();
-      loadCarModelDirect();
-
-      window.addEventListener('resize', onWindowResize);
-      setupControls();
+    // 建立星空背景粒子 (遠景)
+    const starCount = 3000;
+    const starGeo = new THREE.BufferGeometry();
+    const starCoords = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i += 3) {
+      starCoords[i] = (Math.random() - 0.5) * 800;
+      starCoords[i+1] = (Math.random() - 0.5) * 800;
+      starCoords[i+2] = (Math.random() - 0.5) * 800;
     }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starCoords, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.2, transparent: true, opacity: 0.8 });
+    const starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
 
-    function createRoad() {
-      const roadGeo = new THREE.PlaneGeometry(ROAD_WIDTH, TRACK_LENGTH, 10, 50);
-      const roadMat = new THREE.MeshStandardMaterial({
-        color: 0x241738,
-        roughness: 0.8,
-        metalness: 0.2
-      });
+    // 建立核心「紅海星雲」粒子系統 (12,000 顆高能粒子)
+    const nebulaCount = 14000;
+    const nebulaGeo = new THREE.BufferGeometry();
+    const basePositions = new Float32Array(nebulaCount * 3);
+    const currentPositions = new Float32Array(nebulaCount * 3);
+    const nebulaColors = new Float32Array(nebulaCount * 3);
 
-      for (let i = 0; i < 2; i++) {
-        const seg = new THREE.Mesh(roadGeo, roadMat);
-        seg.rotation.x = -Math.PI / 2;
-        seg.position.z = -i * TRACK_LENGTH;
-        seg.receiveShadow = true;
-        scene.add(seg);
-        roadSegments.push(seg);
+    // 左右兩側紅海壁的目標偏移量
+    const sideAssignment = new Float32Array(nebulaCount); // -1 左側, +1 右側
 
-        const railGeo = new THREE.BoxGeometry(0.8, 1.2, TRACK_LENGTH);
-        const railMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0x553300, roughness: 0.3 });
-        const leftRail = new THREE.Mesh(railGeo, railMat);
-        leftRail.position.set(-ROAD_WIDTH / 2, 0.6, -i * TRACK_LENGTH);
-        scene.add(leftRail);
+    for (let i = 0; i < nebulaCount; i++) {
+      const idx = i * 3;
+      // 分佈在隧道型狀星雲中
+      const x = (Math.random() - 0.5) * 140;
+      const y = (Math.random() - 0.5) * 100;
+      const z = (Math.random() - 0.5) * 350;
 
-        const rightRail = new THREE.Mesh(railGeo, railMat);
-        rightRail.position.set(ROAD_WIDTH / 2, 0.6, -i * TRACK_LENGTH);
-        scene.add(rightRail);
+      basePositions[idx] = x;
+      basePositions[idx+1] = y;
+      basePositions[idx+2] = z;
 
-        for (let z = -TRACK_LENGTH / 2; z < TRACK_LENGTH / 2; z += 30) {
-          const p1 = createTrackTotem();
-          p1.position.set(-ROAD_WIDTH / 2 - 3.5, 0, -i * TRACK_LENGTH + z);
-          scene.add(p1);
-          decorations.push(p1);
+      currentPositions[idx] = x;
+      currentPositions[idx+1] = y;
+      currentPositions[idx+2] = z;
 
-          const p2 = createTrackTotem();
-          p2.position.set(ROAD_WIDTH / 2 + 3.5, 0, -i * TRACK_LENGTH + z);
-          scene.add(p2);
-          decorations.push(p2);
-        }
-      }
+      sideAssignment[i] = x >= 0 ? 1 : -1;
 
-      const starGeo = new THREE.BufferGeometry();
-      const starPos = [];
-      for (let i = 0; i < 700; i++) {
-        starPos.push((Math.random() - 0.5) * 600);
-        starPos.push(Math.random() * 160 + 20);
-        starPos.push((Math.random() - 0.5) * 600);
-      }
-      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-      scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffe082, size: 1.5, transparent: true, opacity: 0.8 })));
-    }
-
-    function createTrackTotem() {
-      const g = new THREE.Group();
-      const baseGeo = new THREE.CylinderGeometry(0.8, 1.2, 5, 8);
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0x4a148c });
-      const base = new THREE.Mesh(baseGeo, baseMat);
-      base.position.y = 2.5;
-      g.add(base);
-
-      const crossG = new THREE.Group();
-      const c1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.8, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
-      const c2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
-      c2.position.y = 0.3;
-      crossG.add(c1, c2);
-      crossG.position.y = 6.2;
-      g.add(crossG);
-
-      return g;
-    }
-
-    function createPlayerCar() {
-      playerCarGroup = new THREE.Group();
-      playerCarGroup.position.set(0, 0, 8);
-      scene.add(playerCarGroup);
-    }
-
-    function attachModelToPlayer(carMesh) {
-      const stlCarContainer = new THREE.Group();
-      stlCarContainer.add(carMesh);
-
-      const turretGroup = new THREE.Group();
-      turretGroup.position.set(0, 1.4, 0.2);
-
-      const vCross = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.4, 0.25), new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0x664400 }));
-      const hCross = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 0.25), new THREE.MeshStandardMaterial({ color: 0xffea00, emissive: 0x664400 }));
-      hCross.position.y = 0.25;
-      turretGroup.add(vCross, hCross);
-
-      const cannonGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.8, 12);
-      const cannonMat = new THREE.MeshStandardMaterial({ color: 0x4a2a12, metalness: 0.8, roughness: 0.3 });
-      const cL = new THREE.Mesh(cannonGeo, cannonMat);
-      cL.rotation.x = Math.PI / 2;
-      cL.position.set(-0.75, -0.1, -0.5);
-      const cR = new THREE.Mesh(cannonGeo, cannonMat);
-      cR.rotation.x = Math.PI / 2;
-      cR.position.set(0.75, -0.1, -0.5);
-      turretGroup.add(cL, cR);
-      stlCarContainer.add(turretGroup);
-
-      const haloGeo = new THREE.TorusGeometry(1.6, 0.08, 8, 32);
-      const haloMat = new THREE.MeshBasicMaterial({ color: 0xfff077 });
-      const halo = new THREE.Mesh(haloGeo, haloMat);
-      halo.rotation.x = Math.PI / 2;
-      halo.position.set(0, 2.5, 0);
-      stlCarContainer.add(halo);
-
-      const underglow = new THREE.PointLight(0xffea00, 3, 5);
-      underglow.position.set(0, 0.2, 0);
-      stlCarContainer.add(underglow);
-
-      playerCarGroup.add(stlCarContainer);
-      stlLoaded = true;
-
-      const badge = document.getElementById('model-loading-badge');
-      badge.innerHTML = '✨ 摩西手工超跑渲染就緒！(高精90萬面)';
-      badge.style.color = '#00ff88';
-      badge.style.borderColor = '#00ff88';
-      showToast('🌟 手工超跑已成功上線！支援 360° 賞車與車漆自訂');
-    }
-
-    // ★★★ 核心：直接從內嵌二進位數據加載（零跨域限制、保證 100% 成功） ★★★
-    function loadCarModelDirect() {
-      const statusEl = document.getElementById('model-status');
-      statusEl.innerText = '正在加載手工超跑 (高精 90 萬面)...';
-
-      const gltfLoader = new THREE.GLTFLoader();
-
-      // 將 base64 轉為 ArrayBuffer 直接解析
-      if (window.CAR_GLB_DATA) {
-        const base64Str = window.CAR_GLB_DATA.split(',')[1];
-        const binaryStr = window.atob(base64Str);
-        const len = binaryStr.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryStr.charCodeAt(i);
-        }
-
-        gltfLoader.parse(
-          bytes.buffer,
-          '',
-          (gltf) => {
-            let meshObj = null;
-            gltf.scene.traverse((child) => {
-              if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-                child.geometry.computeVertexNormals();
-                meshObj = child;
-              }
-            });
-
-            const carMat = new THREE.MeshPhysicalMaterial({
-              color: currentPaintColor,
-              metalness: 0.88,
-              roughness: 0.16,
-              clearcoat: 1.0,
-              clearcoatRoughness: 0.08,
-              reflectivity: 0.95
-            });
-
-            if (meshObj) {
-              meshObj.material = carMat;
-              meshObj.geometry.center();
-              const scale = 5.6 / 262.3;
-              meshObj.scale.set(scale, scale, scale);
-              meshObj.rotation.x = -Math.PI / 2;
-              meshObj.rotation.z = Math.PI;
-              meshObj.position.y = 0.55;
-              stlCarMesh = meshObj;
-              attachModelToPlayer(meshObj);
-            }
-          },
-          (err) => {
-            console.error('GLTF Parse Error:', err);
-            statusEl.innerText = '模型解析失敗';
-          }
-        );
+      // 紅海血色星雲混合神秘金光與高能洋紅 (Crimson, Magenta, Orange-Gold)
+      const mix = Math.random();
+      if (mix > 0.6) {
+        // 洋紅 / 緋紅
+        nebulaColors[idx] = 1.0;
+        nebulaColors[idx+1] = 0.05 + Math.random() * 0.2;
+        nebulaColors[idx+2] = 0.35 + Math.random() * 0.4;
+      } else if (mix > 0.25) {
+        // 烈焰金紅
+        nebulaColors[idx] = 1.0;
+        nebulaColors[idx+1] = 0.2 + Math.random() * 0.3;
+        nebulaColors[idx+2] = 0.05;
       } else {
-        statusEl.innerText = '未找到內嵌模型數據';
+        // 幽邃深紫
+        nebulaColors[idx] = 0.6;
+        nebulaColors[idx+1] = 0.0;
+        nebulaColors[idx+2] = 0.9;
       }
     }
 
-    function changeCarPaint(colorHex) {
-      currentPaintColor = colorHex;
-      if (stlCarMesh && stlCarMesh.material) {
-        stlCarMesh.material.color.setHex(colorHex);
+    nebulaGeo.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+    nebulaGeo.setAttribute('color', new THREE.BufferAttribute(nebulaColors, 3));
+
+    const nebulaMat = new THREE.PointsMaterial({
+      size: 2.2,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    const nebulaMesh = new THREE.Points(nebulaGeo, nebulaMat);
+    scene.add(nebulaMesh);
+
+    // 建立代表摩西旗艦 (Ark-101) 的幾何星艦
+    const shipGroup = new THREE.Group();
+    // 船身
+    const hullGeo = new THREE.ConeGeometry(3, 14, 5);
+    hullGeo.rotateX(Math.PI / 2);
+    const hullMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true });
+    const hull = new THREE.Mesh(hullGeo, hullMat);
+    shipGroup.add(hull);
+
+    // 摩西神杖 (光球)
+    const staffSphereGeo = new THREE.SphereGeometry(1.5, 16, 16);
+    const staffSphereMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+    const staffSphere = new THREE.Mesh(staffSphereGeo, staffSphereMat);
+    staffSphere.position.set(0, 4, -4);
+    shipGroup.add(staffSphere);
+
+    // 推進光焰
+    const thrusterGeo = new THREE.CylinderGeometry(0.2, 1.8, 8, 8);
+    thrusterGeo.rotateX(Math.PI / 2);
+    const thrusterMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.7 });
+    const thruster = new THREE.Mesh(thrusterGeo, thrusterMat);
+    thruster.position.set(0, 0, 8);
+    shipGroup.add(thruster);
+
+    shipGroup.position.set(0, 0, 70);
+    scene.add(shipGroup);
+
+    // 法老追擊軍團光點
+    const pharaohCount = 80;
+    const pharaohGroup = new THREE.Group();
+    const pGeom = new THREE.TetrahedronGeometry(1.4);
+    const pMat = new THREE.MeshBasicMaterial({ color: 0xff0055, wireframe: true });
+    for (let p = 0; p < pharaohCount; p++) {
+      const pMesh = new THREE.Mesh(pGeom, pMat);
+      pMesh.position.set(
+        (Math.random() - 0.5) * 80,
+        (Math.random() - 0.5) * 40,
+        180 + Math.random() * 90
+      );
+      pharaohGroup.add(pMesh);
+    }
+    scene.add(pharaohGroup);
+
+    /* =========================================================
+       4. 動畫狀態控制與物理過渡
+       ========================================================= */
+    let splitProgress = 0; // 0 = 封閉星雲, 1 = 徹底劈開兩旁
+    let targetSplitProgress = 0;
+    let targetCameraZ = 180;
+    let clock = new THREE.Clock();
+
+    function updateScriptUI(index) {
+      const data = storyScript[index];
+      const actorBadge = document.getElementById('actor-badge');
+      const chapterBadge = document.getElementById('chapter-badge');
+      const romanceText = document.getElementById('romance-text');
+      const comedyText = document.getElementById('comedy-text');
+      const gaugeBar = document.getElementById('gauge-bar');
+      const pharaohDist = document.getElementById('pharaoh-dist');
+      const staffStatus = document.getElementById('staff-status');
+      const nebulaStatus = document.getElementById('nebula-status');
+
+      actorBadge.className = 'character-tag ' + data.actorType;
+      actorBadge.innerText = data.actor;
+      chapterBadge.innerText = data.act;
+      romanceText.innerText = data.quote;
+      comedyText.innerText = data.comedy;
+
+      gaugeBar.style.width = data.staffCharge + '%';
+      pharaohDist.innerText = data.pharaohDist;
+      staffStatus.innerText = data.staffStatus;
+      nebulaStatus.innerText = data.nebulaStatus;
+
+      // 根據情節設定劈海狀態
+      if (data.nebulaState === 'closed') {
+        targetSplitProgress = 0.05;
+      } else if (data.nebulaState === 'parting') {
+        targetSplitProgress = 0.6;
+        triggerFlash();
+        playPartingSound();
+      } else if (data.nebulaState === 'parted') {
+        targetSplitProgress = 1.0;
+        triggerFlash();
+        playPartingSound();
+      } else if (data.nebulaState === 'collapse') {
+        targetSplitProgress = 0.0;
+        triggerFlash();
       }
+
+      targetCameraZ = data.cameraDist;
+      document.body.dataset.act = index;
+      playBeep(600 + index * 100, 0.1);
     }
 
-    function shootPooMissile() {
-      const now = performance.now();
-      if (now - gameState.lastShootTime < gameState.shootCooldown) return;
-      gameState.lastShootTime = now;
-
-      sound.playPoopShot();
-
-      [-0.75, 0.75].forEach(offset => {
-        const bulletGroup = new THREE.Group();
-        bulletGroup.position.set(playerCarGroup.position.x + offset, 1.4, playerCarGroup.position.z - 2.5);
-
-        const basePoo = new THREE.Mesh(
-          new THREE.ConeGeometry(0.35, 0.9, 8),
-          new THREE.MeshStandardMaterial({ color: 0x5a2d0c, roughness: 0.3, metalness: 0.2 })
-        );
-        basePoo.rotation.x = -Math.PI / 2;
-        bulletGroup.add(basePoo);
-
-        const halo = new THREE.Mesh(
-          new THREE.RingGeometry(0.25, 0.38, 12),
-          new THREE.MeshBasicMaterial({ color: 0xffea00, side: THREE.DoubleSide })
-        );
-        halo.position.z = 0.2;
-        bulletGroup.add(halo);
-
-        scene.add(bulletGroup);
-        bullets.push({ obj: bulletGroup, speed: 3.2, life: 90 });
-      });
+    function triggerFlash() {
+      const overlay = document.getElementById('flash-overlay');
+      overlay.style.opacity = '0.7';
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+      }, 350);
     }
 
-    function triggerHolyUltimate() {
-      if (gameState.faith < 100) {
-        showToast('聖靈充能尚未圓滿！多擊中惡魔！');
-        return;
-      }
-      gameState.faith = 0;
-      updateUI();
-      sound.playHolyHymn();
-
-      showToast('✝ 耶穌基督聖光滌淨！天降聖泉滔天巨浪！ ✝');
-
-      for (let i = 0; i < 40; i++) {
-        spawnSplashParticles(
-          (Math.random() - 0.5) * ROAD_WIDTH,
-          1 + Math.random() * 3,
-          playerCarGroup.position.z - Math.random() * 80,
-          0xffea00,
-          true
-        );
-      }
-
-      enemies.forEach(enemy => {
-        createExplosion(enemy.obj.position.x, enemy.obj.position.y, enemy.obj.position.z);
-        scene.remove(enemy.obj);
-        gameState.score += 2;
-      });
-      enemies = [];
-
-      if (gameState.bossActive && gameState.bossObj) {
-        gameState.bossHp -= 35;
-        sound.playDevilCry();
-        if (gameState.bossHp <= 0) defeatBoss();
-      }
-      updateUI();
-    }
-
-    function spawnEnemy() {
-      if (!gameState.running || gameState.bossActive) return;
-
-      const type = Math.floor(Math.random() * 3);
-      const enemyGroup = new THREE.Group();
-      const lane = ROAD_LANES[Math.floor(Math.random() * ROAD_LANES.length)];
-      enemyGroup.position.set(lane, 0, -180);
-
-      if (type === 0) {
-        const trike = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 2.2), new THREE.MeshStandardMaterial({ color: 0x990000 }));
-        trike.position.y = 0.6;
-        enemyGroup.add(trike);
-
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xff2222 }));
-        head.position.set(0, 1.6, 0.2);
-        enemyGroup.add(head);
-
-        const hornGeo = new THREE.ConeGeometry(0.18, 0.5, 6);
-        const hornMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-        const hornL = new THREE.Mesh(hornGeo, hornMat);
-        hornL.position.set(-0.35, 2.2, 0.2);
-        hornL.rotation.z = 0.3;
-        const hornR = new THREE.Mesh(hornGeo, hornMat);
-        hornR.position.set(0.35, 2.2, 0.2);
-        hornR.rotation.z = -0.3;
-        enemyGroup.add(hornL, hornR);
-      } else if (type === 1) {
-        const cubeMat = new THREE.MeshStandardMaterial({ color: 0x6600cc, roughness: 0.4 });
-        const c1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.8, 2.0), cubeMat);
-        c1.position.y = 1.0;
-        enemyGroup.add(c1);
-
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-        eye.position.set(0, 1.2, 1.05);
-        enemyGroup.add(eye);
+    function nextAct() {
+      if (currentActIndex < storyScript.length - 1) {
+        currentActIndex++;
       } else {
-        const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0x88ff00, roughness: 0.2 }));
-        bottle.rotation.x = Math.PI / 2;
-        bottle.position.y = 1.0;
-        enemyGroup.add(bottle);
-
-        const nipple = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 10), new THREE.MeshStandardMaterial({ color: 0xdd2200 }));
-        nipple.rotation.x = Math.PI / 2;
-        nipple.position.set(0, 1.0, 1.5);
-        enemyGroup.add(nipple);
+        currentActIndex = 0; // 循環回到第一幕
       }
-
-      scene.add(enemyGroup);
-      enemies.push({ obj: enemyGroup, hp: 2, speed: 0.6 + Math.random() * 0.4, type: type, lane: lane });
+      updateScriptUI(currentActIndex);
     }
 
-    function spawnBoss() {
-      gameState.bossActive = true;
-      gameState.bossHp = 100;
-      gameState.bossMaxHp = 100;
-
-      document.getElementById('boss-container').style.display = 'flex';
-      showToast('⚠️ 警告！撒旦幼兒園園長【地獄魔嬰】降臨！ ⚠️');
-
-      const bossGroup = new THREE.Group();
-      bossGroup.position.set(0, 0, -120);
-
-      const head = new THREE.Mesh(new THREE.SphereGeometry(3.6, 20, 20), new THREE.MeshStandardMaterial({ color: 0xaa1111, roughness: 0.3 }));
-      head.position.y = 4.8;
-      bossGroup.add(head);
-
-      const hornGeo = new THREE.ConeGeometry(0.8, 2.8, 12);
-      const hornMat = new THREE.MeshStandardMaterial({ color: 0x110011, roughness: 0.2 });
-      const hL = new THREE.Mesh(hornGeo, hornMat);
-      hL.position.set(-2.2, 7.8, 0);
-      hL.rotation.z = 0.5;
-      const hR = new THREE.Mesh(hornGeo, hornMat);
-      hR.position.set(2.2, 7.8, 0);
-      hR.rotation.z = -0.5;
-      bossGroup.add(hL, hR);
-
-      const eyeGeo = new THREE.SphereGeometry(0.7, 12, 12);
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-      const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-      eyeL.position.set(-1.2, 5.2, 3.2);
-      const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-      eyeR.position.set(1.2, 5.2, 3.2);
-      bossGroup.add(eyeL, eyeR);
-
-      const pacifier = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.3, 10, 20), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-      pacifier.position.set(0, 3.6, 3.4);
-      bossGroup.add(pacifier);
-
-      const evilHalo = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.2, 8, 30), new THREE.MeshBasicMaterial({ color: 0xff0044 }));
-      evilHalo.rotation.x = Math.PI / 2;
-      evilHalo.position.set(0, 9.2, 0);
-      bossGroup.add(evilHalo);
-
-      scene.add(bossGroup);
-      gameState.bossObj = bossGroup;
+    function prevAct() {
+      if (currentActIndex > 0) {
+        currentActIndex--;
+      } else {
+        currentActIndex = storyScript.length - 1;
+      }
+      updateScriptUI(currentActIndex);
     }
 
-    function defeatBoss() {
-      gameState.bossActive = false;
-      showToast('🎉 聖光大捷！撒旦園長已被糞水神聖洗禮！ 🎉');
-      createExplosion(gameState.bossObj.position.x, gameState.bossObj.position.y + 4, gameState.bossObj.position.z, 80);
-      scene.remove(gameState.bossObj);
-      gameState.bossObj = null;
-      document.getElementById('boss-container').style.display = 'none';
-
-      setTimeout(() => { gameOver(true); }, 1500);
-    }
-
-    /* --- 撒旦園長發射地獄飛刀 (Satan Boss Flying Daggers) --- */
-    function spawnBossBlade(startX, startY, startZ, targetX) {
-      sound.playBladeWhoosh();
-      const bladeGroup = new THREE.Group();
-      bladeGroup.position.set(startX, startY, startZ);
-
-      // 飛刀主刀身（金屬暗紅黑、發出嗜血幽光）
-      const bladeGeo = new THREE.ConeGeometry(0.35, 2.2, 5);
-      const bladeMat = new THREE.MeshStandardMaterial({
-        color: 0x220505,
-        emissive: 0xff0033,
-        emissiveIntensity: 0.6,
-        metalness: 0.9,
-        roughness: 0.2
-      });
-      const blade = new THREE.Mesh(bladeGeo, bladeMat);
-      blade.rotation.x = Math.PI / 2; // 刀尖朝向玩家 (+Z)
-      bladeGroup.add(blade);
-
-      // 飛刀護手 / 雙翼尖刺
-      const guardGeo = new THREE.BoxGeometry(1.6, 0.15, 0.25);
-      const guardMat = new THREE.MeshBasicMaterial({ color: 0xff1100 });
-      const guard = new THREE.Mesh(guardGeo, guardMat);
-      guard.position.z = -0.4;
-      bladeGroup.add(guard);
-
-      // 嗜血猩紅小光暈
-      const light = new THREE.PointLight(0xff0044, 1.8, 8);
-      bladeGroup.add(light);
-
-      scene.add(bladeGroup);
-
-      // 計算向玩家方向飛行的向量
-      const dx = targetX - startX;
-      const dz = 8 - startZ; // 玩家位於 z ≈ 8
-      const dist = Math.hypot(dx, dz);
-      const speed = 1.6 + Math.random() * 0.4;
-
-      bossBlades.push({
-        obj: bladeGroup,
-        vx: (dx / dist) * speed,
-        vz: (dz / dist) * speed,
-        rotSpeed: 0.25 + Math.random() * 0.15,
-        life: 180
-      });
-    }
-
-    function spawnSplashParticles(x, y, z, colorHex = 0x7a431d, isHoly = false) {
-      const pCount = isHoly ? 20 : 16;
-      for (let i = 0; i < pCount; i++) {
-        // 顆粒更細小 (0.06 ~ 0.12)，具有水滴霧化質感
-        const radius = isHoly ? (0.1 + Math.random() * 0.1) : (0.06 + Math.random() * 0.08);
-        const geo = new THREE.SphereGeometry(radius, 6, 6);
-        // 半透明透明水花材質
-        const mat = new THREE.MeshBasicMaterial({
-          color: colorHex,
-          transparent: true,
-          opacity: isHoly ? 0.8 : (0.45 + Math.random() * 0.3)
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.set(
-          x + (Math.random() - 0.5) * 0.2,
-          y + (Math.random() - 0.5) * 0.2,
-          z + (Math.random() - 0.5) * 0.2
-        );
-        scene.add(mesh);
-
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 0.25 + 0.05;
-        particles.push({
-          mesh: mesh,
-          mat: mat,
-          initialOpacity: mat.opacity,
-          vx: Math.cos(angle) * speed,
-          vy: Math.random() * 0.35 + 0.05,
-          vz: Math.sin(angle) * speed,
-          maxLife: 35,
-          life: 35
-        });
+    function toggleAuto() {
+      const autoBtn = document.getElementById('auto-btn');
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        autoBtn.innerText = '自動演繹：關閉';
+      } else {
+        autoBtn.innerText = '自動演繹：播放中';
+        autoPlayInterval = setInterval(() => {
+          nextAct();
+        }, 5500);
       }
     }
 
-    function createExplosion(x, y, z, count = 35) {
-      sound.playSplash();
-      for (let i = 0; i < count; i++) {
-        const isHoly = Math.random() > 0.4;
-        const color = isHoly ? 0xffea00 : 0x6d3c1a;
-        // 爆炸水花也更細膩精緻
-        const radius = isHoly ? (0.12 + Math.random() * 0.1) : (0.08 + Math.random() * 0.12);
-        const mat = new THREE.MeshBasicMaterial({
-          color: color,
-          transparent: true,
-          opacity: isHoly ? 0.85 : 0.6
-        });
-        const p = new THREE.Mesh(
-          new THREE.SphereGeometry(radius, 6, 6),
-          mat
-        );
-        p.position.set(x, y, z);
-        scene.add(p);
-        particles.push({
-          mesh: p,
-          mat: mat,
-          initialOpacity: mat.opacity,
-          vx: (Math.random() - 0.5) * 0.6,
-          vy: Math.random() * 0.6 + 0.15,
-          vz: (Math.random() - 0.5) * 0.6,
-          maxLife: 45,
-          life: 45
-        });
-      }
-    }
-
-    let lastTime = performance.now();
-    let enemySpawnCounter = 0;
-
+    /* =========================================================
+       5. 渲染迴圈 Render Loop
+       ========================================================= */
     function animate() {
       requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
 
-      const now = performance.now();
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
+      // 平滑插值過渡
+      splitProgress += (targetSplitProgress - splitProgress) * 0.04;
+      camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
+      camera.position.x = Math.sin(elapsedTime * 0.4) * 8;
+      camera.position.y = 12 + Math.cos(elapsedTime * 0.3) * 3;
+      camera.lookAt(0, 0, -20);
 
-      if (!gameState.running) {
-        if (orbitControls) orbitControls.update();
-        renderer.render(scene, camera);
-        return;
-      }
+      // 摩西飛船微動漂浮
+      shipGroup.position.y = Math.sin(elapsedTime * 1.5) * 1.5;
+      shipGroup.rotation.z = Math.sin(elapsedTime * 1.2) * 0.08;
+      staffSphere.scale.setScalar(1 + Math.sin(elapsedTime * 8) * 0.25);
 
-      const steerSpeed = 22.0 * dt;
-      if (gameState.keys.left) gameState.targetX = Math.max(-ROAD_WIDTH / 2 + 2.5, gameState.targetX - steerSpeed);
-      if (gameState.keys.right) gameState.targetX = Math.min(ROAD_WIDTH / 2 - 2.5, gameState.targetX + steerSpeed);
-
-      gameState.playerX += (gameState.targetX - gameState.playerX) * 0.18;
-      playerCarGroup.position.x = gameState.playerX;
-      playerCarGroup.rotation.z = (gameState.playerX - gameState.targetX) * 0.08;
-      playerCarGroup.rotation.y = (gameState.playerX - gameState.targetX) * 0.05;
-
-      if (cameraMode === 0) {
-        camera.position.x += (gameState.playerX * 0.6 - camera.position.x) * 0.1;
-        camera.position.y = 5.2;
-        camera.position.z = 15;
-        camera.lookAt(gameState.playerX * 0.3, 1.2, -10);
-      } else {
-        camera.position.x += (gameState.playerX * 0.8 - camera.position.x) * 0.15;
-        camera.position.y = 2.8;
-        camera.position.z = 10.5;
-        camera.lookAt(gameState.playerX, 1.2, -15);
-      }
-
-      // 移除原有的 gameState.keys.shoot 自動連射，強制單發點射
-
-      roadSegments.forEach(seg => {
-        seg.position.z += gameState.speed;
-        if (seg.position.z > TRACK_LENGTH / 2) seg.position.z -= TRACK_LENGTH * 2;
-      });
-      decorations.forEach(dec => {
-        dec.position.z += gameState.speed;
-        if (dec.position.z > 20) dec.position.z -= TRACK_LENGTH * 2;
+      // 法老艦隊追獵震動逼近
+      pharaohGroup.children.forEach((p, idx) => {
+        p.rotation.x += 0.02;
+        p.rotation.y += 0.03;
+        // 隨著劇情靠近
+        if (targetSplitProgress > 0.5) {
+          p.position.z -= 0.15;
+        }
       });
 
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        b.obj.position.z -= b.speed;
-        b.obj.rotation.z += 0.2;
-        b.life--;
+      // 動態更新 14,000 顆紅海等離子粒子
+      const posAttr = nebulaGeo.attributes.position;
+      const corridorWidth = 65 * splitProgress; // 走廊排開寬度
 
-        if (Math.random() > 0.4) spawnSplashParticles(b.obj.position.x, b.obj.position.y - 0.2, b.obj.position.z + 0.3, 0x6e3b11);
+      for (let i = 0; i < nebulaCount; i++) {
+        const idx = i * 3;
+        const side = sideAssignment[i];
+        const baseX = basePositions[idx];
+        const baseY = basePositions[idx+1];
+        const baseZ = basePositions[idx+2];
 
-        let hit = false;
-        if (gameState.bossActive && gameState.bossObj) {
-          const dx = b.obj.position.x - gameState.bossObj.position.x;
-          const dz = b.obj.position.z - gameState.bossObj.position.z;
-          if (Math.abs(dx) < 4.0 && Math.abs(dz) < 4.0) {
-            hit = true;
-            gameState.bossHp -= 6.0; // 單發傷害增強，彌補射速降低帶來的爽快感平衡
-            sound.playSplash();
-            spawnSplashParticles(b.obj.position.x, b.obj.position.y, b.obj.position.z, 0x5a2d0c);
-            document.getElementById('boss-bar-fill').style.width = Math.max(0, (gameState.bossHp / gameState.bossMaxHp) * 100) + '%';
-            if (gameState.bossHp <= 0) defeatBoss();
-          }
-        }
+        // 波動方程式
+        const wave = Math.sin(elapsedTime * 2 + baseZ * 0.05) * 4;
 
-        if (!hit) {
-          for (let j = enemies.length - 1; j >= 0; j--) {
-            const e = enemies[j];
-            const dx = b.obj.position.x - e.obj.position.x;
-            const dz = b.obj.position.z - e.obj.position.z;
-            if (Math.hypot(dx, dz) < 2.0) {
-              hit = true;
-              e.hp -= 2; // 單發直接貫穿擊破小怪
-              sound.playSplash();
-              spawnSplashParticles(e.obj.position.x, e.obj.position.y + 1, e.obj.position.z, 0x5a2d0c);
-              
-              if (e.hp <= 0) {
-                sound.playDevilCry();
-                createExplosion(e.obj.position.x, e.obj.position.y + 1, e.obj.position.z);
-                scene.remove(e.obj);
-                enemies.splice(j, 1);
-                gameState.score++;
-                gameState.faith = Math.min(100, gameState.faith + 25);
-                updateUI();
-
-                if (gameState.score >= 15 && !gameState.bossActive && !gameState.bossObj) spawnBoss();
-              }
-              break;
-            }
-          }
-        }
-
-        if (hit || b.life <= 0 || b.obj.position.z < -220) {
-          scene.remove(b.obj);
-          bullets.splice(i, 1);
+        if (splitProgress > 0.05) {
+          // 摩西神蹟：將粒子朝左右排開，形成壯觀的垂直等離子海嘯牆
+          const displacement = side * corridorWidth;
+          posAttr.array[idx] = baseX + displacement;
+          // 壁面隨高度隆起，營造排開的巨浪壯觀感
+          posAttr.array[idx+1] = baseY + Math.sin(baseZ * 0.08) * (corridorWidth * 0.45) + wave;
+        } else {
+          // 恢復混沌星雲
+          posAttr.array[idx] = baseX + Math.sin(elapsedTime + baseY * 0.1) * 3;
+          posAttr.array[idx+1] = baseY + wave;
         }
       }
+      posAttr.needsUpdate = true;
 
-      enemySpawnCounter += dt;
-      if (enemySpawnCounter > 1.3) {
-        enemySpawnCounter = 0;
-        spawnEnemy();
-      }
-
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
-        e.obj.position.z += gameState.speed + e.speed;
-
-        const dx = e.obj.position.x - playerCarGroup.position.x;
-        const dz = e.obj.position.z - playerCarGroup.position.z;
-        if (Math.hypot(dx, dz) < 2.2) {
-          sound.playHurt();
-          gameState.hp -= 18;
-          updateUI();
-          createExplosion(e.obj.position.x, 1, e.obj.position.z, 15);
-          scene.remove(e.obj);
-          enemies.splice(i, 1);
-
-          if (gameState.hp <= 0) gameOver(false);
-          continue;
-        }
-
-        if (e.obj.position.z > 20) {
-          scene.remove(e.obj);
-          enemies.splice(i, 1);
-        }
-      }
-
-      // 5. Boss 巡邏與飛刀彈幕技能
-      if (gameState.bossActive && gameState.bossObj) {
-        gameState.bossObj.position.x = Math.sin(now * 0.002) * (ROAD_WIDTH / 2 - 4);
-        gameState.bossObj.position.y = 1.0 + Math.sin(now * 0.005) * 0.8;
-
-        // 定時向超跑猛擲地獄飛刀
-        gameState.lastBossShootTime += dt;
-        if (gameState.lastBossShootTime > gameState.bossShootInterval) {
-          gameState.lastBossShootTime = 0;
-          gameState.bossShootCount++;
-
-          const bx = gameState.bossObj.position.x;
-          const by = gameState.bossObj.position.y + 4.5;
-          const bz = gameState.bossObj.position.z + 2;
-
-          // 普通單發狙擊 / 扇形 3 連發狂暴飛刀
-          if (gameState.bossShootCount % 3 === 0) {
-            // 狂暴 3 散彈飛刀
-            showToast('⚠️ 撒旦園長發動【地獄飛刀狂風】！迅速變道閃避！ ⚠️');
-            spawnBossBlade(bx, by, bz, gameState.playerX - 5);
-            spawnBossBlade(bx, by, bz, gameState.playerX);
-            spawnBossBlade(bx, by, bz, gameState.playerX + 5);
-          } else {
-            // 精準狙擊超跑目前位置
-            spawnBossBlade(bx, by, bz, gameState.playerX);
-          }
-        }
-      }
-
-      // 5.1 Boss 飛刀軌跡更新與刺中玩家超跑判定
-      for (let i = bossBlades.length - 1; i >= 0; i--) {
-        const blade = bossBlades[i];
-        blade.obj.position.x += blade.vx;
-        blade.obj.position.z += blade.vz + gameState.speed;
-        blade.obj.rotation.z += blade.rotSpeed; // 飛刀破空旋轉
-        blade.life--;
-
-        // 刺中超跑判定
-        const dx = blade.obj.position.x - playerCarGroup.position.x;
-        const dz = blade.obj.position.z - playerCarGroup.position.z;
-        if (Math.hypot(dx, dz) < 1.9) {
-          sound.playHurt();
-          gameState.hp -= 22; // 飛刀銳利重創
-          updateUI();
-          createExplosion(blade.obj.position.x, 1.2, blade.obj.position.z, 20);
-          showToast('💥 遭地獄飛刀刺中！車體受損！');
-          scene.remove(blade.obj);
-          bossBlades.splice(i, 1);
-
-          if (gameState.hp <= 0) gameOver(false);
-          continue;
-        }
-
-        if (blade.life <= 0 || blade.obj.position.z > 25) {
-          scene.remove(blade.obj);
-          bossBlades.splice(i, 1);
-        }
-      }
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.mesh.position.x += p.vx;
-        p.mesh.position.y += p.vy;
-        p.mesh.position.z += p.vz;
-        p.vy -= 0.012;
-        p.life--;
-
-        // 透明度隨生命週期自然淡出漸隱
-        if (p.mat) {
-          p.mat.opacity = (p.life / p.maxLife) * p.initialOpacity;
-        }
-
-        if (p.life <= 0 || p.mesh.position.y < 0) {
-          scene.remove(p.mesh);
-          particles.splice(i, 1);
-        }
-      }
+      // 星空自轉
+      starField.rotation.y = elapsedTime * 0.01;
 
       renderer.render(scene, camera);
     }
 
-    function toggleCameraView() {
-      cameraMode = cameraMode === 0 ? 1 : 0;
-      showToast(cameraMode === 0 ? '📷 視角：經典追尾' : '📷 視角：車體近景特寫');
-    }
-
-    function updateUI() {
-      document.getElementById('hp-bar').style.width = Math.max(0, gameState.hp) + '%';
-      document.getElementById('faith-bar').style.width = Math.min(100, gameState.faith) + '%';
-      document.getElementById('score-val').innerText = gameState.score;
-      if (gameState.bossActive) {
-        document.getElementById('boss-bar-fill').style.width = Math.max(0, (gameState.bossHp / gameState.bossMaxHp) * 100) + '%';
-      }
-    }
-
-    function showToast(text) {
-      const toast = document.getElementById('event-toast');
-      toast.innerText = text;
-      toast.style.opacity = '1';
-      toast.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translate(-50%, -50%) scale(0.9)';
-      }, 1800);
-    }
-
-    function gameOver(isVictory) {
-      gameState.running = false;
-      const modal = document.getElementById('end-modal');
-      const title = document.getElementById('end-title');
-      const desc = document.getElementById('end-desc');
-      const finalScore = document.getElementById('final-score');
-
-      finalScore.innerText = gameState.score;
-      if (isVictory) {
-        title.innerText = '✝ 聖光洗禮大捷！撒旦幼兒園被淨化！ 💩';
-        title.style.color = '#ffd700';
-        desc.innerText = '耶穌與摩西超跑攜手發射的無數神聖糞水飛彈，成功滌淨了撒旦園長與地獄惡童！幼兒園現已改名為聖愛天使班！';
-      } else {
-        title.innerText = '💀 摩西超跑暫時回廠維修！ 💀';
-        title.style.color = '#ff4444';
-        desc.innerText = '撒旦幼兒園的惡童積木攻勢太猛烈！不要灰心，重整聖光旗鼓，再次用神聖糞水制裁他們！';
-      }
-      modal.style.display = 'flex';
-      if (orbitControls) orbitControls.enabled = true;
-    }
-
-    function resetGame() {
-      gameState.hp = 100;
-      gameState.faith = 0;
-      gameState.score = 0;
-      gameState.playerX = 0;
-      gameState.targetX = 0;
-      gameState.bossActive = false;
-      gameState.bossHp = 100;
-      if (gameState.bossObj) {
-        scene.remove(gameState.bossObj);
-        gameState.bossObj = null;
-      }
-      document.getElementById('boss-container').style.display = 'none';
-
-      enemies.forEach(e => scene.remove(e.obj));
-      enemies = [];
-      bossBlades.forEach(b => scene.remove(b.obj));
-      bossBlades = [];
-      bullets.forEach(b => scene.remove(b.obj));
-      bullets = [];
-      particles.forEach(p => scene.remove(p.mesh));
-      particles = [];
-
-      updateUI();
-      if (orbitControls) orbitControls.enabled = false;
-      gameState.running = true;
-    }
-
-    /* --- 開頭儀式感動畫劇本邏輯 (Epic Cinematic Intro) --- */
-    const introLines = [
-      "⚔️ 這是一場亙古未有的正邪大戰...",
-      "👿 撒旦幼兒園釋放地獄惡童，企圖用混亂污染純潔的人間。",
-      "✨ 耶穌的聖靈降臨於此，賦予了【摩西超跑】神聖之光！",
-      "💩 裝備神聖生化之泉，以聖潔糞水滌淨一切罪惡！",
-      "✝️ 讓我們疾馳出征，傳達福音，擊潰最終的撒旦大魔王！"
-    ];
-
-    let currentLineIdx = 0;
-    let introTimer = null;
-    let introFinished = false;
-
-    function startIntroCinematic() {
-      const screen = document.getElementById('intro-screen');
-      const textEl = document.getElementById('story-text');
-
-      function nextLine() {
-        if (introFinished) return;
-        currentLineIdx++;
-        if (currentLineIdx < introLines.length) {
-          textEl.classList.remove('show');
-          setTimeout(() => {
-            textEl.innerHTML = introLines[currentLineIdx];
-            textEl.classList.add('show');
-            sound.playCathedralBell();
-          }, 400);
-          introTimer = setTimeout(nextLine, 3200);
-        } else {
-          finishIntro();
-        }
-      }
-
-      function finishIntro() {
-        if (introFinished) return;
-        introFinished = true;
-        clearTimeout(introTimer);
-        screen.classList.add('fade-out');
-        sound.playHolyHymn();
-        setTimeout(() => {
-          screen.style.display = 'none';
-        }, 1200);
-      }
-
-      // 點擊任意處立即推進或跳過動畫
-      screen.addEventListener('click', () => {
-        sound.init();
-        if (currentLineIdx < introLines.length - 1) {
-          clearTimeout(introTimer);
-          nextLine();
-        } else {
-          finishIntro();
-        }
-      });
-
-      // 自動依序播放
-      introTimer = setTimeout(nextLine, 3000);
-      sound.playCathedralBell();
-    }
-
-    function setupControls() {
-      window.addEventListener('keydown', (e) => {
-        sound.init();
-        if (e.code === 'KeyA' || e.code === 'ArrowLeft') gameState.keys.left = true;
-        if (e.code === 'KeyD' || e.code === 'ArrowRight') gameState.keys.right = true;
-        if (e.code === 'Space') {
-          // 禁止按住連發：每次敲擊空白鍵觸發一次射擊（受一秒冷卻限制）
-          shootPooMissile();
-        }
-        if (e.code === 'KeyE') triggerHolyUltimate();
-        if (e.code === 'KeyC') toggleCameraView();
-      });
-
-      window.addEventListener('keyup', (e) => {
-        if (e.code === 'KeyA' || e.code === 'ArrowLeft') gameState.keys.left = false;
-        if (e.code === 'KeyD' || e.code === 'ArrowRight') gameState.keys.right = false;
-        // Space 鍵放開無須額外處理，已完全杜絕連發
-      });
-
-      document.getElementById('view-btn').addEventListener('click', toggleCameraView);
-
-      document.querySelectorAll('.paint-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.paint-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          const hex = parseInt(btn.getAttribute('data-color'), 16);
-          changeCarPaint(hex);
-        });
-      });
-
-      document.getElementById('start-btn').addEventListener('click', () => {
-        sound.init();
-        document.getElementById('start-modal').style.display = 'none';
-        resetGame();
-      });
-      document.getElementById('restart-btn').addEventListener('click', () => {
-        sound.init();
-        document.getElementById('end-modal').style.display = 'none';
-        resetGame();
-      });
-    }
-
-    function onWindowResize() {
+    window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    });
 
-    window.onload = () => {
-      initThree();
-      animate();
-      startIntroCinematic();
-    };
+    // 啟動第一幕初始化
+    updateScriptUI(0);
+    animate();
   </script>
 </body>
 </html>
