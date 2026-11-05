@@ -305,7 +305,7 @@
 
     /* 依幕次顯示角色 */
     body[data-act="0"] #moses, body[data-act="0"] #toll { opacity: 1; pointer-events: auto; }
-    body[data-act="1"] #moses, body[data-act="1"] #pharaoh, body[data-act="1"] #pudding { opacity: 1; pointer-events: auto; }
+    body[data-act="1"] #moses, body[data-act="1"] #pharaoh, body[data-act="1"] #pudding, body[data-act="1"] #barrage-fx { opacity: 1; pointer-events: auto; }
     body[data-act="2"] #moses, body[data-act="2"] #winupdate, body[data-act="2"] #bolts { opacity: 1; pointer-events: auto; }
     body[data-act="3"] #moses, body[data-act="3"] #shrimp, body[data-act="3"] #hearts { opacity: 1; pointer-events: auto; }
     body[data-act="4"] #pharaoh, body[data-act="4"] #wave, body[data-act="4"] #victory { opacity: 1; pointer-events: auto; }
@@ -313,6 +313,47 @@
     body[data-act="4"] #pharaoh { transform: translate(0, 60px) rotate(-20deg); }
     #shrimp { transform: translateX(200px); }
     body[data-act="3"] #shrimp { transform: translateX(0); }
+
+    /* ================= 砲擊身歷其境緊張感特效 ================= */
+    #red-alert-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 7;
+      opacity: 0;
+      box-shadow: inset 0 0 110px rgba(255, 0, 55, 0.85);
+      border: 4px solid rgba(255, 0, 55, 0.7);
+      transition: opacity 0.3s ease;
+    }
+    body[data-act="1"] #red-alert-overlay,
+    body.under-attack #red-alert-overlay {
+      opacity: 1;
+      animation: redAlertPulse 0.45s ease-in-out infinite alternate;
+    }
+    @keyframes redAlertPulse {
+      from { box-shadow: inset 0 0 60px rgba(255, 0, 55, 0.4); border-color: rgba(255, 0, 55, 0.3); }
+      to   { box-shadow: inset 0 0 160px rgba(255, 0, 30, 0.95); border-color: rgba(255, 50, 50, 1); }
+    }
+
+    body.hull-hit .dialogue-card,
+    body.hull-hit .hud-header {
+      animation: hullShake 0.28s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes hullShake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-10px, 6px) rotate(-1.2deg); }
+      40% { transform: translate(9px, -8px) rotate(1.2deg); }
+      60% { transform: translate(-8px, -4px) rotate(-0.8deg); }
+      80% { transform: translate(6px, 5px) rotate(0.6deg); }
+    }
+
+    .laser-beam-svg {
+      animation: laserShoot 0.55s linear infinite;
+    }
+    @keyframes laserShoot {
+      0% { stroke-dashoffset: 400; opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: 0.2; }
+    }
 
     .clickable-actor { cursor: pointer; filter: drop-shadow(0 0 6px rgba(255,255,255,0.25)); }
     .clickable-actor:hover { filter: drop-shadow(0 0 14px #00f3ff); }
@@ -436,6 +477,7 @@
   <!-- Three.js 3D 渲染容器 -->
   <div id="canvas-container"></div>
   <div id="flash-overlay"></div>
+  <div id="red-alert-overlay"></div>
   <div id="danmaku-layer"></div>
 
   <!-- 神杖藍白當機畫面 (BSOD) 彩蛋 -->
@@ -509,6 +551,38 @@
         <text x="18" y="58" font-size="14" fill="#7b3f00" id="pudding-label">摩西的</text>
       </g>
       <text x="-20" y="105" font-size="16" fill="#fff">陛下…這布丁吃嗎？(點我偷吃)</text>
+    </g>
+
+    <!-- 🔥 第二幕專屬：法老毀滅砲擊 + 座艙擋風玻璃震裂特效 -->
+    <g id="barrage-fx" class="actor">
+      <!-- 密集重型反物質雷射砲火從右上法老艦隊轟向摩西座艙 -->
+      <line class="laser-beam-svg" x1="1320" y1="360" x2="240" y2="410" stroke="#ff0055" stroke-width="10" stroke-dasharray="90 50"/>
+      <line class="laser-beam-svg" x1="1280" y1="300" x2="350" y2="220" stroke="#ff9900" stroke-width="7" stroke-dasharray="70 45" style="animation-delay:.18s"/>
+      <line class="laser-beam-svg" x1="1350" y1="430" x2="520" y2="520" stroke="#ff0055" stroke-width="8" stroke-dasharray="110 60" style="animation-delay:.32s"/>
+
+      <!-- 摩西飛船護盾爆裂火光與「新手上路」保命車貼 -->
+      <g transform="translate(260, 380)" class="shake">
+        <circle cx="0" cy="0" r="95" fill="none" stroke="#ff0055" stroke-width="4" stroke-dasharray="18 10"/>
+        <text x="-40" y="-50" font-size="40">💥🔥</text>
+        <g transform="translate(-55, 65)">
+          <rect width="175" height="36" rx="6" fill="#ffd700" stroke="#000" stroke-width="2"/>
+          <text x="8" y="24" font-size="15" font-weight="bold" fill="#000">🔰 新手開方舟請多禮讓</text>
+        </g>
+      </g>
+
+      <!-- 第一人稱座艙玻璃被砲火震出蜘蛛網裂痕 + 卡住一隻法老黃金拖鞋 -->
+      <g transform="translate(520, 170)" class="clickable-actor" onclick="pokeActor(event, 'crack')">
+        <path d="M0 0 L-65 -45 M0 0 L55 -60 M0 0 L85 15 M0 0 L25 85 M0 0 L-75 40 M-35 -24 L-10 -50 M30 -32 L60 -10 M-40 20 L-15 55" stroke="#d8f8ff" stroke-width="3" fill="none" opacity="0.85"/>
+        <circle cx="0" cy="0" r="6" fill="#fff"/>
+        <text x="-28" y="15" font-size="42" class="wiggle">🩴</text>
+        <text x="-95" y="115" font-size="15" fill="#ff99bb" font-weight="bold">⚠️ 座艙玻璃龜裂 (連法老的黃金拖鞋都射過來了！點我修補)</text>
+      </g>
+
+      <!-- 頂部紅色警報橫幅 -->
+      <g transform="translate(800, 115)">
+        <rect x="-260" y="-32" width="520" height="46" rx="8" fill="#ff0033dd" stroke="#fff" stroke-width="2"/>
+        <text x="0" y="-2" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">🚨 警告：遭受法老主砲齊射！能量護盾僅剩 1% 🚨</text>
+      </g>
     </g>
 
     <!-- Windows 更新視窗 -->
@@ -622,10 +696,11 @@
 
       <div class="controls-bar">
         <button class="btn" id="prev-btn" onclick="prevAct()">⏮ 上一幕</button>
-        <button class="btn btn-primary" id="next-btn" onclick="nextAct()">觸發下一步：引力闢海 ⏩</button>
+        <button class="btn btn-primary" id="next-btn" onclick="nextAct()">觸發下一步：推進劇情 ⏩</button>
         <button class="btn" id="auto-btn" onclick="toggleAuto()">▶️ 自動演繹：關</button>
-        <button class="btn" onclick="throwPudding()">🍮 扔布丁砸法老</button>
-        <button class="btn" onclick="burstDanmaku()">💬 刷一波宇宙彈幕</button>
+        <button class="btn" style="border-color:#ff0055; color:#ff99bb;" onclick="triggerHeavyBarrage()">💥 體驗法老萬砲轟炸</button>
+        <button class="btn" onclick="throwPudding()">🍮 扔布丁反擊</button>
+        <button class="btn" onclick="burstDanmaku()">💬 刷宇宙彈幕</button>
         <button class="btn" id="rave-btn" onclick="toggleRave()">🎺 太空嗩吶蹦迪</button>
         <button class="btn" id="voice-btn" onclick="toggleVoice()">🎙️ 戲精配音：關</button>
       </div>
@@ -634,73 +709,73 @@
 
   <script>
     /* =========================================================
-       1. 劇情與浪漫/搞笑腳本數據
+       1. 劇情與浪漫/搞笑腳本數據（完整「起、承、轉、合」戲劇結構）
        ========================================================= */
     const storyScript = [
       {
-        act: "ACT 1 / 困於星雲邊境",
+        act: "【起】ACT 1 / 絕境序幕：困於紅海星雲邊境",
         actor: "🚀 先知艦長・摩西",
         actorType: "moses",
-        quote: "「我們背後是十萬艘法老帝國的反物質巡洋艦，身前是能溶化恆星的紅海超聚變星雲。親愛的，抓緊我的量子力學講義，我要為你劈開一道光。」",
-        comedy: "🚨 【星艦廣播】：所有難民請收好奶茶與爆米花，引力撕裂星雲時可能會有輕微暈車，請勿將頭手伸出防護力場外面。",
+        quote: "「我們背後是十萬艘法老帝國的反物質巡洋艦，身前是能熔化恆星的紅海超聚變星雲。親愛的，抓緊我的量子力學講義，我要為你劈開一道光。」",
+        comedy: "🚨 【星艦廣播】：副艦長提醒，後方十萬大軍之所以窮追不捨，純粹是因為摩西上週走星際高速公路逃了 35 塊錢的蟲洞過路費。",
         nebulaState: "closed",
         cameraDist: 180,
         staffCharge: 20,
-        pharaohDist: "4.2 AU (急速迫近)",
+        pharaohDist: "4.2 AU (十萬敵艦包圍)",
         nebulaStatus: "緻密高熱・阻擋前路",
         staffStatus: "引力電量 20%"
       },
       {
-        act: "ACT 2 / 法老的星際追緝廣播",
-        actor: "👑 法老帝國總指揮艦",
+        act: "【承】ACT 2 / 毀滅砲擊：法老萬砲齊發！護盾瀕臨破碎",
+        actor: "👑 法老帝國總指揮艦 (全艦開火！！)",
         actorType: "pharaoh",
-        quote: "「摩西！你就算逃到事件視界邊緣，也休想抹去你留在帝國宮廷資料庫裡的合約！整個宇宙只有我能支配你！」",
-        comedy: "📡 【公共頻道攔截】：法老副官悄悄插話：『陛下，他偷跑其實沒關係，但他在宮廷冰箱留下的那罐貼了名字的布丁您到底吃不吃？』",
-        nebulaState: "closed",
-        cameraDist: 150,
-        staffCharge: 45,
-        pharaohDist: "1.8 AU (進入射程)",
-        nebulaStatus: "等離子火網狂暴跳動",
-        staffStatus: "引力超載 45%"
+        quote: "「全艦反物質主砲齊射！把摩西的推進器轟成宇宙塵埃！——哪怕把這片星空燒成灰燼，朕也要把你留在帝國的疆域裡！」",
+        comedy: "💥 【座艙警報】：轟隆隆！！漫天砲火把擋風玻璃震出裂痕（連法老的黃金拖鞋都射過來了）！副官尖叫：『護盾只剩 1%！全靠船尾那張【🔰新手開方舟請多禮讓】車貼跟摩西偷藏的布丁在撐啊！』",
+        nebulaState: "barrage",
+        cameraDist: 145,
+        staffCharge: 55,
+        pharaohDist: "0.9 AU (🔥 主砲猛烈轟炸中！！)",
+        nebulaStatus: "遭受重砲洗禮・座艙劇烈震動",
+        staffStatus: "護盾剩 1%・緊急蓄能 55%"
       },
       {
-        act: "ACT 3 / 舉杖！量子劈海神蹟",
+        act: "【轉】ACT 3 / 絕地神蹟：砲火中舉杖！量子劈海",
         actor: "✨ 摩西與超維權杖",
         actorType: "moses",
-        quote: "「以奇異物質之名，願引力常數為你俯首稱臣！——我劈開的不是冰冷星雲，而是我們通往自由的永恆誓約！」",
-        comedy: "💥 【神蹟發生】：摩西按下引力杖上的『一鍵排海』紅色按鈕，但因為是二手市場買的，儀表板跳出 Windows 更新警告：『請勿關閉電源（1/35）』。",
+        quote: "「護盾碎裂前的最後一秒，就是奇蹟誕生的時刻！以奇異物質之名，願引力常數為你俯首稱臣——為我們的愛劈開紅海吧！」",
+        comedy: "💻 【神蹟卡頓】：摩西在漫天砲火中帥氣按下神杖上的『一鍵排海』，結果二手神杖當場跳出 Windows 藍底更新：『請勿關閉電源（1/35）』，嚇得法老砲手全部停火傻眼。",
         nebulaState: "parting",
         cameraDist: 120,
-        staffCharge: 85,
-        pharaohDist: "0.6 AU (導彈已鎖定)",
-        nebulaStatus: "【核心裂開！！】等離子牆左右退避！",
-        staffStatus: "超維力場全開 85%"
+        staffCharge: 90,
+        pharaohDist: "0.4 AU (敵軍看傻停火)",
+        nebulaStatus: "【核心撕裂！！】等離子巨牆左右退避！",
+        staffStatus: "超維力場全開 90%"
       },
       {
-        act: "ACT 4 / 奇蹟走廊：漫步紅海之底",
+        act: "【轉・續】ACT 4 / 奇蹟走廊：漫步紅海深淵",
         actor: "🌌 宇宙旁白",
         actorType: "narrator",
         quote: "「十億道赤紅等離子浪潮凝固成通天巨壁，如同兩道燃燒的玫瑰羽翼，在深淵之中為迷途者鋪陳一條璀璨無垠的銀河之路。」",
-        comedy: "🦞 【生態發現】：難民船員從舷窗望出去，發現星雲深處被分開後，有幾隻長達三千公里的『宇宙發光巨蝦』一臉懵逼地看著他們開過去。",
+        comedy: "🦞 【生態發現】：飛船衝入安全走廊脫離砲火，船員從舷窗望出去，發現星雲被劈開後有幾隻三千公里長的『宇宙發光巨蝦』一臉懵逼地看著他們開過去。",
         nebulaState: "parted",
         cameraDist: 90,
         staffCharge: 100,
-        pharaohDist: "進入走廊入口！",
-        nebulaStatus: "穩定時空走廊 (通航中)",
+        pharaohDist: "追入紅海走廊中央！",
+        nebulaStatus: "穩定時空走廊 (全速通航中)",
         staffStatus: "神聖過載 100% (極致穩定)"
       },
       {
-        act: "ACT 5 / 終章：回合與法老的悲劇",
+        act: "【合】ACT 5 / 終章大結局：星雲合攏與應許星系",
         actor: "👑 法老艦隊最後通訊",
         actorType: "pharaoh",
-        quote: "「既然你開了一條路，朕就踏著星塵把你追回！——等等，為什麼這片等離子海在向中央坍縮？！摩西你算計我！」",
-        comedy: "🌊 【水淹大軍】：摩西權杖解除相位鎖，百萬光年紅海星雲瞬間回湧合攏！法老全艦隊被高能等離子打到短路，集體播放開機音樂並原地熄火。",
+        quote: "「既然你開了一條路，朕就踏著星塵把你追回！——等等，為什麼兩側的等離子海嘯在向中央坍縮？！摩西你算計我！」",
+        comedy: "🌊 【水淹大軍】：摩西瀟灑解除神杖相位鎖，百萬光年紅海星雲瞬間回湧合攏！法老全艦隊被高能等離子電到短路，集體播放 Windows 開機音樂並原地熄火，摩西全員平安抵達應許星系！",
         nebulaState: "collapse",
         cameraDist: 140,
         staffCharge: 0,
         pharaohDist: "被星雲吞噬 (信號全斷)",
-        nebulaStatus: "恢復平靜・自由之境",
-        staffStatus: "能量冷卻完畢 (勝利抵達應許星系)"
+        nebulaStatus: "恢復平靜・自由應許之境",
+        staffStatus: "任務圓滿完成 🎉"
       }
     ];
 
@@ -867,6 +942,17 @@
     thruster.position.set(0, 0, 8);
     shipGroup.add(thruster);
 
+    // 摩西飛船能量護盾 (遭受砲擊時閃爍紅光)
+    const shieldGeo = new THREE.SphereGeometry(11, 16, 16);
+    const shieldMat = new THREE.MeshBasicMaterial({
+      color: 0xff0055,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.0
+    });
+    const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+    shipGroup.add(shieldMesh);
+
     shipGroup.position.set(0, 0, 70);
     scene.add(shipGroup);
 
@@ -885,6 +971,27 @@
       pharaohGroup.add(pMesh);
     }
     scene.add(pharaohGroup);
+
+    // 🔥 法老 3D 反物質重砲光束群 (Artillery Laser Barrage)
+    const artilleryCount = 28;
+    const artilleryGroup = new THREE.Group();
+    const boltGeo = new THREE.CylinderGeometry(0.35, 0.35, 16, 6);
+    boltGeo.rotateX(Math.PI / 2);
+    const boltMat = new THREE.MeshBasicMaterial({ color: 0xff2255 });
+    for (let b = 0; b < artilleryCount; b++) {
+      const bolt = new THREE.Mesh(boltGeo, boltMat);
+      bolt.position.set(
+        (Math.random() - 0.5) * 70,
+        (Math.random() - 0.5) * 35,
+        90 + Math.random() * 140
+      );
+      bolt.visible = false;
+      artilleryGroup.add(bolt);
+    }
+    scene.add(artilleryGroup);
+
+    let barrageIntensity = 0; // > 0 時處於猛烈砲擊狀態
+    let cameraShakePower = 0;
 
     /* =========================================================
        4. 動畫狀態控制與物理過渡
@@ -916,19 +1023,26 @@
       staffStatus.innerText = data.staffStatus;
       nebulaStatus.innerText = data.nebulaStatus;
 
-      // 根據情節設定劈海狀態
+      // 根據情節設定劈海與砲擊狀態
       if (data.nebulaState === 'closed') {
         targetSplitProgress = 0.05;
+        barrageIntensity = 0;
+      } else if (data.nebulaState === 'barrage') {
+        targetSplitProgress = 0.08;
+        triggerHeavyBarrage();
       } else if (data.nebulaState === 'parting') {
         targetSplitProgress = 0.6;
+        barrageIntensity = 0.3;
         triggerFlash();
         playPartingSound();
       } else if (data.nebulaState === 'parted') {
         targetSplitProgress = 1.0;
+        barrageIntensity = 0;
         triggerFlash();
         playPartingSound();
       } else if (data.nebulaState === 'collapse') {
         targetSplitProgress = 0.0;
+        barrageIntensity = 0;
         triggerFlash();
       }
 
@@ -1026,6 +1140,10 @@
           "🦐 巨蝦：「看什麼看！沒看過三千公里的泰國蝦喔？」",
           "🧄 巨蝦：「誰再往紅海倒蒜蓉醬油我就報警了喔！！」",
           "🦞 巨蝦：「借過借過，你們擋到我追星際八點檔了！」"
+        ],
+        crack: [
+          "🩴 你拔下了卡在擋風玻璃上的『法老24K純金拖鞋』！拿去抵 35 元過路費還有找！",
+          "🔧 副艦長拿透明膠帶把座艙裂痕貼起來了：『安啦！還可以再撐十萬光年！』"
         ]
       };
 
@@ -1195,6 +1313,48 @@
       }, 350);
     }
 
+    // 💥 法老重砲轟炸身歷其境系統 (Heavy Artillery Barrage)
+    function playCannonBoom() {
+      try {
+        const ctx = getAudioContext();
+        // 重低音砲擊震波
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(130, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(28, ctx.currentTime + 0.45);
+        gain.gain.setValueAtTime(0.28, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.45);
+      } catch(e) {}
+    }
+
+    function triggerHeavyBarrage() {
+      barrageIntensity = 1.0;
+      cameraShakePower = 4.5;
+      document.body.classList.add('under-attack', 'hull-hit');
+      playCannonBoom();
+      setTimeout(() => playCannonBoom(), 260);
+      setTimeout(() => playCannonBoom(), 550);
+      setTimeout(() => playCannonBoom(), 900);
+
+      spawnDanmaku("🚨 【高能預警】：法老旗艦開火了！！全體難民抓穩手搖飲！！");
+      spawnDanmaku("🛡️ 副官：護盾剩 1%！還好船尾貼了『新手駕駛請多包涵』彈開了致命一擊！");
+
+      setTimeout(() => {
+        document.body.classList.remove('hull-hit');
+      }, 1200);
+      setTimeout(() => {
+        if (currentActIndex !== 1) {
+          document.body.classList.remove('under-attack');
+          barrageIntensity = 0;
+        }
+      }, 3500);
+    }
+
     function nextAct() {
       if (currentActIndex < storyScript.length - 1) {
         currentActIndex++;
@@ -1234,17 +1394,42 @@
       requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // 平滑插值過渡
+      // 平滑插值過渡 + 砲擊時第一人稱鏡頭劇烈震動 (Camera Shake)
       splitProgress += (targetSplitProgress - splitProgress) * 0.04;
       camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
-      camera.position.x = Math.sin(elapsedTime * 0.4) * 8;
-      camera.position.y = 12 + Math.cos(elapsedTime * 0.3) * 3;
-      camera.lookAt(0, 0, -20);
+      if (cameraShakePower > 0.05) {
+        cameraShakePower *= 0.94;
+      } else {
+        cameraShakePower = (currentActIndex === 1) ? 1.3 : 0;
+      }
+      const shakeX = (Math.random() - 0.5) * cameraShakePower * 2.5;
+      const shakeY = (Math.random() - 0.5) * cameraShakePower * 2.5;
 
-      // 摩西飛船微動漂浮
-      shipGroup.position.y = Math.sin(elapsedTime * 1.5) * 1.5;
-      shipGroup.rotation.z = Math.sin(elapsedTime * 1.2) * 0.08;
+      camera.position.x = Math.sin(elapsedTime * 0.4) * 8 + shakeX;
+      camera.position.y = 12 + Math.cos(elapsedTime * 0.3) * 3 + shakeY;
+      camera.lookAt(shakeX * 0.4, shakeY * 0.4, -20);
+
+      // 摩西飛船微動漂浮與護盾受擊閃爍
+      shipGroup.position.y = Math.sin(elapsedTime * 1.5) * 1.5 + shakeY * 0.3;
+      shipGroup.rotation.z = Math.sin(elapsedTime * 1.2) * 0.08 + shakeX * 0.02;
       staffSphere.scale.setScalar(1 + Math.sin(elapsedTime * 8) * 0.25);
+
+      const isUnderBarrage = (currentActIndex === 1 || barrageIntensity > 0);
+      shieldMesh.material.opacity = isUnderBarrage ? (0.25 + Math.abs(Math.sin(elapsedTime * 18)) * 0.45) : 0;
+      shieldMesh.rotation.y += 0.05;
+
+      // 3D 法老反物質重砲光束雨高速呼嘯擦過鏡頭與飛船
+      artilleryGroup.children.forEach((bolt) => {
+        bolt.visible = isUnderBarrage;
+        if (isUnderBarrage) {
+          bolt.position.z -= 7.5; // 從後方高速射向摩西飛船與紅海
+          if (bolt.position.z < 30) {
+            bolt.position.z = 160 + Math.random() * 80;
+            bolt.position.x = (Math.random() - 0.5) * 65;
+            bolt.position.y = (Math.random() - 0.5) * 35;
+          }
+        }
+      });
 
       // 法老艦隊追獵震動逼近
       pharaohGroup.children.forEach((p, idx) => {
