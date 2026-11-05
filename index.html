@@ -304,15 +304,129 @@
     .bubble text { font: bold 15px "Microsoft JhengHei", sans-serif; fill: #111; }
 
     /* 依幕次顯示角色 */
-    body[data-act="0"] #moses, body[data-act="0"] #toll { opacity: 1; }
-    body[data-act="1"] #moses, body[data-act="1"] #pharaoh, body[data-act="1"] #pudding { opacity: 1; }
-    body[data-act="2"] #moses, body[data-act="2"] #winupdate, body[data-act="2"] #bolts { opacity: 1; }
-    body[data-act="3"] #moses, body[data-act="3"] #shrimp, body[data-act="3"] #hearts { opacity: 1; }
-    body[data-act="4"] #pharaoh, body[data-act="4"] #wave, body[data-act="4"] #victory { opacity: 1; }
+    body[data-act="0"] #moses, body[data-act="0"] #toll { opacity: 1; pointer-events: auto; }
+    body[data-act="1"] #moses, body[data-act="1"] #pharaoh, body[data-act="1"] #pudding { opacity: 1; pointer-events: auto; }
+    body[data-act="2"] #moses, body[data-act="2"] #winupdate, body[data-act="2"] #bolts { opacity: 1; pointer-events: auto; }
+    body[data-act="3"] #moses, body[data-act="3"] #shrimp, body[data-act="3"] #hearts { opacity: 1; pointer-events: auto; }
+    body[data-act="4"] #pharaoh, body[data-act="4"] #wave, body[data-act="4"] #victory { opacity: 1; pointer-events: auto; }
     body[data-act="2"] #moses-staff { animation: wiggle .2s infinite; }
     body[data-act="4"] #pharaoh { transform: translate(0, 60px) rotate(-20deg); }
     #shrimp { transform: translateX(200px); }
     body[data-act="3"] #shrimp { transform: translateX(0); }
+
+    .clickable-actor { cursor: pointer; filter: drop-shadow(0 0 6px rgba(255,255,255,0.25)); }
+    .clickable-actor:hover { filter: drop-shadow(0 0 14px #00f3ff); }
+
+    /* ================= 星際直播彈幕與搞笑特效 ================= */
+    #danmaku-layer {
+      position: absolute;
+      top: 85px;
+      left: 0;
+      width: 100%;
+      height: 55%;
+      pointer-events: none;
+      z-index: 8;
+      overflow: hidden;
+    }
+    .danmaku-item {
+      position: absolute;
+      white-space: nowrap;
+      font-weight: 800;
+      font-size: 1.05rem;
+      text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.35);
+      animation: flyLeft linear forwards;
+    }
+    @keyframes flyLeft {
+      from { transform: translateX(105vw); }
+      to { transform: translateX(-120%); }
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 0, 85, 0.2);
+      border: 1px solid #ff0055;
+      color: #ff99bb;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-top: 6px;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #ff0055;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #ff0055;
+      animation: blink 0.8s infinite;
+    }
+
+    /* 戳一戳浮動吐嘈框 */
+    .poke-toast {
+      position: absolute;
+      z-index: 30;
+      background: #ffd700;
+      color: #111;
+      font-weight: 900;
+      font-size: 0.95rem;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 2px solid #000;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      pointer-events: none;
+      animation: popUpToast 1.8s cubic-bezier(.2,1.3,.4,1) forwards;
+    }
+    @keyframes popUpToast {
+      0% { transform: translate(-50%, 0) scale(0.3); opacity: 0; }
+      15% { transform: translate(-50%, -20px) scale(1.08); opacity: 1; }
+      80% { transform: translate(-50%, -35px) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -60px) scale(0.8); opacity: 0; }
+    }
+
+    /* 神杖藍白當機畫面 (BSOD) */
+    #bsod-modal {
+      position: absolute;
+      inset: 0;
+      background: #0078d7;
+      color: #fff;
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      padding: 10% 15%;
+      font-family: 'Segoe UI', Consolas, monospace;
+      cursor: pointer;
+    }
+    #bsod-modal.show { display: flex; }
+
+    /* 電音蹦迪模式 (Rave Mode) */
+    body.rave-mode .dialogue-card {
+      animation: raveBorder 0.4s infinite alternate;
+    }
+    body.rave-mode #svg-stage {
+      animation: raveBounce 0.35s infinite alternate;
+    }
+    @keyframes raveBorder {
+      from { border-color: #ff0055; box-shadow: 0 0 40px #ff0055; }
+      to { border-color: #00f3ff; box-shadow: 0 0 40px #00f3ff; }
+    }
+    @keyframes raveBounce {
+      from { transform: scale(1) rotate(-1deg); }
+      to { transform: scale(1.03) rotate(1deg); }
+    }
+
+    /* 飛天布丁投擲動畫 */
+    .flying-pudding {
+      position: absolute;
+      font-size: 3.2rem;
+      z-index: 25;
+      pointer-events: none;
+      transition: all 0.65s cubic-bezier(0.25, -0.4, 0.5, 1);
+    }
   </style>
   <!-- 引入 Three.js -->
   <script src="three.min.js"></script>
@@ -322,15 +436,32 @@
   <!-- Three.js 3D 渲染容器 -->
   <div id="canvas-container"></div>
   <div id="flash-overlay"></div>
+  <div id="danmaku-layer"></div>
 
-  <!-- SVG 卡通娛樂層 -->
+  <!-- 神杖藍白當機畫面 (BSOD) 彩蛋 -->
+  <div id="bsod-modal" onclick="closeBSOD()">
+    <div style="font-size: 5rem; margin-bottom: 16px;">:(</div>
+    <div style="font-size: 1.6rem; line-height: 1.6; margin-bottom: 24px;">
+      您的「超維度摩西神杖 3000」遇到問題，因此必須重新啟動。<br>
+      我們剛剛正在劈開紅海，但微軟決定現在強制安裝更新。
+    </div>
+    <div style="font-size: 1.2rem; color: #b3e0ff; margin-bottom: 28px;">
+      完成進度：<span id="bsod-pct">0</span>% （千萬別拔插頭，法老已經在敲擋風玻璃了）
+    </div>
+    <div style="font-size: 0.95rem; opacity: 0.85;">
+      終止代碼：CRITICAL_POOR_MOSES_OWES_35_NTD_TOLL_FEE<br>
+      👉 點擊畫面任意處「拍打神杖」強制恢復神蹟
+    </div>
+  </div>
+
+  <!-- SVG 卡通娛樂層（點擊角色可觸發隱藏笑點！） -->
   <svg id="svg-stage" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
     <defs>
       <radialGradient id="orb"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#ffd700"/><stop offset="1" stop-color="#ffd70000"/></radialGradient>
     </defs>
 
-    <!-- 摩西（Q版太空鬍子艦長） -->
-    <g id="moses" class="actor" transform="translate(140,330)">
+    <!-- 摩西（Q版太空鬍子艦長 - 點擊互動） -->
+    <g id="moses" class="actor clickable-actor" transform="translate(140,330)" onclick="pokeActor(event, 'moses')">
       <g class="bob">
         <ellipse cx="80" cy="120" rx="60" ry="22" fill="#00f3ff33" stroke="#00f3ff"/>
         <rect x="45" y="40" width="70" height="80" rx="20" fill="#2b4c9b"/>
@@ -343,21 +474,22 @@
           <rect x="128" y="-40" width="6" height="150" fill="#8b5a2b"/>
           <circle class="glow" cx="131" cy="-46" r="22" fill="url(#orb)"/>
         </g>
+        <text x="15" y="155" font-size="13" fill="#00f3ff">👆 點摩西試試</text>
       </g>
     </g>
 
     <!-- 過路費罰單 -->
-    <g id="toll" class="actor" transform="translate(330,250)">
+    <g id="toll" class="actor clickable-actor" transform="translate(330,250)" onclick="pokeActor(event, 'toll')">
       <g class="bob"><g class="bubble">
         <rect width="230" height="70" rx="14" fill="#fff"/>
         <path d="M20 70 L0 95 L45 70Z" fill="#fff"/>
         <text x="16" y="30">🧾 欠繳蟲洞過路費</text>
-        <text x="16" y="55" fill="#d00">NT$35 逾期 999 年</text>
+        <text x="16" y="55" fill="#d00" id="toll-text">NT$35 逾期 999 年</text>
       </g></g>
     </g>
 
-    <!-- 法老（Q版） -->
-    <g id="pharaoh" class="actor" transform="translate(1270,320)">
+    <!-- 法老（Q版 - 點擊互動） -->
+    <g id="pharaoh" class="actor clickable-actor" transform="translate(1270,320)" onclick="pokeActor(event, 'pharaoh')">
       <g class="shake">
         <rect x="20" y="70" width="100" height="90" rx="20" fill="#7a0030"/>
         <path d="M20 40 L70 -30 L120 40 L120 90 L20 90Z" fill="#ffd700" stroke="#1a3cff" stroke-width="5" stroke-dasharray="14 8"/>
@@ -365,27 +497,28 @@
         <path d="M55 48 l10 4 M85 48 l-10 4" stroke="#000" stroke-width="4"/>
         <path d="M55 70 Q70 60 85 70" stroke="#000" stroke-width="4" fill="none"/>
         <text x="20" y="-45" font-size="32" class="float-up">💢</text>
+        <text x="15" y="185" font-size="13" fill="#ff99bb">👆 戳爆法老</text>
       </g>
     </g>
 
     <!-- 布丁 -->
-    <g id="pudding" class="actor" transform="translate(1080,200)">
+    <g id="pudding" class="actor clickable-actor" transform="translate(1080,200)" onclick="pokeActor(event, 'pudding')">
       <g class="wiggle">
         <path d="M10 70 L20 20 Q45 5 70 20 L80 70Z" fill="#ffd166"/>
         <path d="M20 20 Q45 5 70 20 Q45 35 20 20Z" fill="#7b3f00"/>
-        <text x="18" y="58" font-size="14" fill="#7b3f00">摩西的</text>
+        <text x="18" y="58" font-size="14" fill="#7b3f00" id="pudding-label">摩西的</text>
       </g>
-      <text x="-20" y="105" font-size="16" fill="#fff">陛下…這布丁吃嗎？</text>
+      <text x="-20" y="105" font-size="16" fill="#fff">陛下…這布丁吃嗎？(點我偷吃)</text>
     </g>
 
     <!-- Windows 更新視窗 -->
-    <g id="winupdate" class="actor" transform="translate(600,140)">
+    <g id="winupdate" class="actor clickable-actor" transform="translate(600,140)" onclick="pokeActor(event, 'winupdate')">
       <g class="shake">
         <rect width="400" height="160" fill="#0078d7" rx="6"/>
         <text x="30" y="55" fill="#fff" font-size="24">⚙ 正在更新神杖…</text>
-        <text x="30" y="90" fill="#fff" font-size="16">請勿關閉電源（1/35）</text>
+        <text x="30" y="90" fill="#fff" font-size="16" id="win-step-text">請勿關閉電源（1/35）</text>
         <g transform="translate(330,110)"><circle class="spin" r="18" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="20 12"/></g>
-        <text x="30" y="130" fill="#ffe" font-size="14">法老：可以等你一下沒關係</text>
+        <text x="30" y="130" fill="#ffe" font-size="14">法老：可以等你一下沒關係 (點擊催促)</text>
       </g>
     </g>
 
@@ -397,13 +530,13 @@
     </g>
 
     <!-- 宇宙發光巨蝦 -->
-    <g id="shrimp" class="actor" transform-origin="1250 400">
+    <g id="shrimp" class="actor clickable-actor" transform-origin="1250 400" onclick="pokeActor(event, 'shrimp')">
       <g transform="translate(1150,330)" class="bob">
         <path d="M0 60 Q60 -20 160 30 Q200 60 170 100 Q100 130 30 100Z" fill="#ff7b54" stroke="#ffd" stroke-width="3"/>
         <path d="M40 40 Q50 80 40 105 M75 30 Q85 75 75 115 M110 32 Q120 75 110 112" stroke="#ffbca0" stroke-width="4" fill="none"/>
         <circle cx="150" cy="45" r="10" fill="#fff"/><circle cx="153" cy="45" r="5" fill="#000"/>
         <path class="wiggle" d="M160 35 Q220 -40 260 -20 M165 40 Q240 0 270 20" stroke="#ffd" stroke-width="3" fill="none"/>
-        <text x="20" y="-10" font-size="22" fill="#fff">？？？蛤</text>
+        <text x="20" y="-10" font-size="22" fill="#fff" id="shrimp-talk">？？？蛤 (點我烤蝦)</text>
       </g>
     </g>
 
@@ -444,6 +577,10 @@
           <span>⚡ MOSES PROTOCOL // 摩西協議</span>
         </div>
         <div class="hud-sub">紅海超重力等離子體星雲・深空脫離戰</div>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          <span>星際抖音直播中 | 觀看外星人：<strong id="viewer-count">8,429,103</strong></span>
+        </div>
       </div>
 
       <div class="status-panel">
@@ -486,8 +623,11 @@
       <div class="controls-bar">
         <button class="btn" id="prev-btn" onclick="prevAct()">⏮ 上一幕</button>
         <button class="btn btn-primary" id="next-btn" onclick="nextAct()">觸發下一步：引力闢海 ⏩</button>
-        <button class="btn" id="auto-btn" onclick="toggleAuto()">自動演繹：關閉</button>
-        <button class="btn" onclick="playBeep(440, 0.2)">🔊 音效測試</button>
+        <button class="btn" id="auto-btn" onclick="toggleAuto()">▶️ 自動演繹：關</button>
+        <button class="btn" onclick="throwPudding()">🍮 扔布丁砸法老</button>
+        <button class="btn" onclick="burstDanmaku()">💬 刷一波宇宙彈幕</button>
+        <button class="btn" id="rave-btn" onclick="toggleRave()">🎺 太空嗩吶蹦迪</button>
+        <button class="btn" id="voice-btn" onclick="toggleVoice()">🎙️ 戲精配音：關</button>
       </div>
     </div>
   </div>
@@ -795,6 +935,256 @@
       targetCameraZ = data.cameraDist;
       document.body.dataset.act = index;
       playBeep(600 + index * 100, 0.1);
+      if (voiceEnabled) speakCurrentAct(data);
+      // 換幕時隨機刷 2 條搞笑宇宙彈幕
+      setTimeout(() => spawnDanmaku(), 300);
+      setTimeout(() => spawnDanmaku(), 1200);
+    }
+
+    /* =========================================================
+       4.5 爆笑互動系統：宇宙彈幕、戳角色、丟布丁、太空嗩吶、戲精配音
+       ========================================================= */
+    const danmakuPool = [
+      "🚀 宇宙海巡署：前方的 Ark-101 請靠邊停船補繳 35 元過路費！",
+      "🦞 紅海巨蝦：當時我正在睡午覺，突然家裡屋頂被摩西掀了？？？",
+      "👑 法老王剛刷了 10 顆反物質火箭並留言：還我焦糖布丁！！",
+      "💻 微軟客服：親，神杖更新到 99% 卡住建議重灌系統喔～",
+      "🌹 摩西粉頭：雖然他逃票又欠錢，但他劈開星雲的樣子好浪漫嗚嗚嗚",
+      "🍎 牛頓與愛因斯坦罵罵咧咧地退出了直播間",
+      "💳 請問過紅海通道可以刷悠遊卡或 Line Pay 嗎？",
+      "📢 賣烤蝦囉！新鮮剛被高能等離子燙熟的三千公里巨蝦，一份35元！",
+      "⚠️ 警告：法老艦隊因為全體連上免費星際 Wi-Fi 正在看貓咪影片已減速",
+      "🎵 為什麼我腦袋裡開始自動播放埃及嗩吶BGM了哈哈哈"
+    ];
+
+    const danmakuColors = ["#ffffff", "#00f3ff", "#ffd166", "#ff99bb", "#7bf1a8", "#ffd700"];
+
+    function spawnDanmaku(customText) {
+      const layer = document.getElementById('danmaku-layer');
+      if (!layer) return;
+      const item = document.createElement('div');
+      item.className = 'danmaku-item';
+      item.innerText = customText || danmakuPool[Math.floor(Math.random() * danmakuPool.length)];
+      item.style.top = (Math.random() * 82) + '%';
+      item.style.color = danmakuColors[Math.floor(Math.random() * danmakuColors.length)];
+      const duration = 6 + Math.random() * 4;
+      item.style.animationDuration = duration + 's';
+      layer.appendChild(item);
+      setTimeout(() => item.remove(), duration * 1000);
+    }
+
+    function burstDanmaku() {
+      playBeep(880, 0.08, 'triangle');
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => spawnDanmaku(), i * 220);
+      }
+      // 觀看人數暴增
+      const vc = document.getElementById('viewer-count');
+      if (vc) {
+        const num = parseInt(vc.innerText.replace(/,/g, ''), 10) + Math.floor(Math.random() * 50000 + 10000);
+        vc.innerText = num.toLocaleString();
+      }
+    }
+
+    // 定期自動飄彈幕
+    setInterval(() => {
+      if (Math.random() < 0.65) spawnDanmaku();
+    }, 3200);
+
+    // 點擊 SVG 角色的「戳一戳」搞笑回饋
+    let tollPrice = 35;
+    let winStep = 1;
+    function pokeActor(event, type) {
+      event.stopPropagation();
+      const x = event.clientX || window.innerWidth / 2;
+      const y = event.clientY || window.innerHeight / 2;
+
+      const jokes = {
+        moses: [
+          "🧔 摩西：「別扯我鬍子！裡面藏了 35 塊私房錢！」",
+          "🪄 摩西：「這根神杖其實是我在拼多多 9.9 包郵買的登山杖！」",
+          "😎 摩西：「先別管法老了，你覺得我這角度自拍帥嗎？」"
+        ],
+        pharaoh: [
+          "🤬 法老：「別戳朕！朕的黃金頭巾是假髮黏上去的會掉！！」",
+          "🍮 法老：「摩西偷喝朕的珍奶還偷吃布丁，此仇不共戴天！」",
+          "💸 法老：「傳令下去！全軍改用悠遊卡扣款追擊！」"
+        ],
+        toll: [
+          `📈 滯納金暴增！現在欠繳 NT$${tollPrice += 100} 元了！`,
+          "👮 收費員：「先生，裝死沒用，我們已經把罰單刻在摩西十誡石板上了！」"
+        ],
+        pudding: [
+          "🥄 咔滋！你偷偷挖了一大口摩西的布丁！（法老血壓 +999）",
+          "🍮 布丁成精了：「別吃我！我已經過期三千年了！」"
+        ],
+        winupdate: [
+          "💻 正在安裝 Windows 11 強制廣告與踩地雷外掛...",
+          "⏳ 更新倒退中！請勿拔掉神杖電池！"
+        ],
+        shrimp: [
+          "🦐 巨蝦：「看什麼看！沒看過三千公里的泰國蝦喔？」",
+          "🧄 巨蝦：「誰再往紅海倒蒜蓉醬油我就報警了喔！！」",
+          "🦞 巨蝦：「借過借過，你們擋到我追星際八點檔了！」"
+        ]
+      };
+
+      const list = jokes[type] || ["✨ 觸發神秘宇宙笑點！"];
+      const msg = list[Math.floor(Math.random() * list.length)];
+      showPokeToast(x, y, msg);
+
+      // 滑稽音效
+      playFunnyBoing();
+
+      // 特殊彩蛋互動
+      if (type === 'toll') {
+        const t = document.getElementById('toll-text');
+        if (t) t.textContent = `NT$${tollPrice} 滯納金狂飆中`;
+      } else if (type === 'pudding') {
+        const p = document.getElementById('pudding-label');
+        if (p) p.textContent = '被偷吃一口';
+      } else if (type === 'shrimp') {
+        const s = document.getElementById('shrimp-talk');
+        if (s) s.textContent = '🍤 蒜蓉蒸蝦 NT$35';
+      } else if (type === 'winupdate') {
+        winStep += Math.floor(Math.random() * 50 + 10);
+        const w = document.getElementById('win-step-text');
+        if (w) w.textContent = `請勿關閉電源（${winStep}/35）咦？`;
+        if (winStep > 60) triggerBSOD();
+      }
+    }
+
+    function showPokeToast(x, y, text) {
+      const toast = document.createElement('div');
+      toast.className = 'poke-toast';
+      toast.style.left = x + 'px';
+      toast.style.top = y + 'px';
+      toast.innerText = text;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1800);
+    }
+
+    function playFunnyBoing() {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.26);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.26);
+      } catch(e) {}
+    }
+
+    // 藍白當機畫面 (BSOD) 惡搞
+    function triggerBSOD() {
+      const modal = document.getElementById('bsod-modal');
+      const pct = document.getElementById('bsod-pct');
+      if (!modal) return;
+      modal.classList.add('show');
+      playBeep(140, 0.6, 'sawtooth');
+      let p = 0;
+      const timer = setInterval(() => {
+        p += Math.floor(Math.random() * 29);
+        if (pct) pct.innerText = p;
+        if (p > 250) clearInterval(timer);
+      }, 300);
+    }
+
+    function closeBSOD() {
+      const modal = document.getElementById('bsod-modal');
+      if (modal) modal.classList.remove('show');
+      showPokeToast(window.innerWidth / 2, window.innerHeight / 2, "🔧 啪！你用力拍了神杖兩下，Windows 嚇得立刻修好了！");
+      playFunnyBoing();
+    }
+
+    // 🍮 朝法老扔布丁大絕招
+    function throwPudding() {
+      playFunnyBoing();
+      const fly = document.createElement('div');
+      fly.className = 'flying-pudding';
+      fly.innerText = '🍮';
+      fly.style.left = '18%';
+      fly.style.top = '52%';
+      document.body.appendChild(fly);
+
+      requestAnimationFrame(() => {
+        fly.style.left = '78%';
+        fly.style.top = '38%';
+        fly.style.transform = 'rotate(720deg) scale(1.8)';
+      });
+
+      setTimeout(() => {
+        fly.innerText = '💥🍮';
+        playBeep(120, 0.25, 'square');
+        showPokeToast(window.innerWidth * 0.78, window.innerHeight * 0.38, "🎯 暴擊！焦糖布丁精準糊在法老臉上！甜度超標！");
+        spawnDanmaku("🍮 【全宇宙賀電】：摩西把過期布丁扔還給法老了哈哈哈哈！！");
+        setTimeout(() => fly.remove(), 450);
+      }, 650);
+    }
+
+    // 🎺 太空嗩吶電音蹦迪模式 (Rave Mode)
+    let isRaving = false;
+    let raveTimer = null;
+    const suonaNotes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 783.99, 659.25];
+    let noteIdx = 0;
+
+    function toggleRave() {
+      isRaving = !isRaving;
+      const btn = document.getElementById('rave-btn');
+      if (isRaving) {
+        document.body.classList.add('rave-mode');
+        btn.innerText = '🛑 停止嗩吶蹦迪';
+        spawnDanmaku("🎺 全體注意！！摩西掏出賽博嗩吶開始在紅海海底蹦迪了！！");
+        raveTimer = setInterval(() => {
+          const freq = suonaNotes[noteIdx % suonaNotes.length];
+          noteIdx++;
+          playBeep(freq, 0.16, 'sawtooth');
+        }, 190);
+      } else {
+        document.body.classList.remove('rave-mode');
+        btn.innerText = '🎺 太空嗩吶蹦迪';
+        clearInterval(raveTimer);
+      }
+    }
+
+    // 🎙️ AI 戲精語音配音 (Web Speech API)
+    let voiceEnabled = false;
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById('voice-btn');
+      if (voiceEnabled) {
+        btn.innerText = '🎙️ 戲精配音：開';
+        speakCurrentAct(storyScript[currentActIndex]);
+      } else {
+        btn.innerText = '🎙️ 戲精配音：關';
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      }
+    }
+
+    function speakCurrentAct(data) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      // 第一段：超深情低沉語調唸浪漫台詞
+      const u1 = new SpeechSynthesisUtterance(data.quote.replace(/[「」]/g, ''));
+      u1.lang = 'zh-TW';
+      u1.pitch = data.actorType === 'pharaoh' ? 0.6 : 0.8;
+      u1.rate = 0.95;
+
+      // 第二段：超高音花栗鼠快嘴唸搞笑吐槽
+      const u2 = new SpeechSynthesisUtterance(data.comedy.replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？]/g, ''));
+      u2.lang = 'zh-TW';
+      u2.pitch = 1.7;
+      u2.rate = 1.35;
+
+      window.speechSynthesis.speak(u1);
+      window.speechSynthesis.speak(u2);
     }
 
     function triggerFlash() {
@@ -894,8 +1284,15 @@
       }
       posAttr.needsUpdate = true;
 
-      // 星空自轉
+      // 星空自轉與蹦迪七彩霓虹特效
       starField.rotation.y = elapsedTime * 0.01;
+      if (isRaving) {
+        nebulaMesh.rotation.z = Math.sin(elapsedTime * 10) * 0.08;
+        nebulaMat.size = 2.8 + Math.sin(elapsedTime * 16) * 0.8;
+      } else {
+        nebulaMesh.rotation.z = 0;
+        nebulaMat.size = 2.2;
+      }
 
       renderer.render(scene, camera);
     }
